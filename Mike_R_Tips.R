@@ -7,3 +7,5 @@ promo[is.na(promo)] <- 0
 tpp1 <- table(priceper1)
 #subset Table
 tpp1[names(tpp1)==0]
+#mean given a factor
+mean(xy$y[xy$region == "South"])
