@@ -150,7 +150,14 @@ summary(fit2)
 ## -1 to drop the intercept, 4 is 4th column
 pvals <- summary(fit)$coef[-1,4] 
 hist(pvals)
-
+## FDR check for improved glm at 0.01%
+pvals2 <- summary(fit2)$coef[-1,4] 
+hist(pvals2)
+source("fdr.R")
+cutoff001<-fdr_cut(pvals2,q=0.001)
+print(cutoff001)
+print(sum(pvals2<=cutoff001))
+names(pvals2)[order(pvals2)] 
 ###############Extra Question P-Value FDR#################
 ##########################################################
 
@@ -203,3 +210,4 @@ print(sum(pvals<=cutoff01))
 # Test GitHub
 # Test GitHub2
 # Test 3
+# Test 4
