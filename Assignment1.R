@@ -31,11 +31,7 @@ boxplot(logpaid~deal,ylab="Log Amount Paid",xlab="Promotion")
 #purchases from same household
 samehouse<-factor(benjer$household_id)
 summary(samehouse)
-hist(samehouse$count)
-samehouse<-table(factor(benjer$household_id))
-freq<-as.data.frame(samehouse)
-head(freq)
-hist(freq$Freq)
+
 
 #################Question 2 Explain Model#################
 ##########################################################
