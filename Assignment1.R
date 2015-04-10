@@ -114,6 +114,8 @@ x2$microwave <- benjer$kitchen_appliances %in% c(1,4,5,7)
 x2$sfh <- benjer$type_of_residence==1
 x2$internet <- benjer$household_internet_connection==1
 x2$tvcable <- benjer$tv_items>1
+x2$qty<-benjer$quantity
+x2$tot<-benjer$total_spent
 z<-data.frame(hhid=benjer$household_id)
 
 z2<-transform(z,freq.hhid=ave(seq(nrow(z)),hhid,FUN=length))
