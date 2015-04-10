@@ -150,7 +150,7 @@ summary(fit2)
 ## -1 to drop the intercept, 4 is 4th column
 pvals <- summary(fit)$coef[-1,4] 
 hist(pvals)
-## FDR check for improved glm at 0.01%
+## FDR check for improved glm at 0.1%
 pvals2 <- summary(fit2)$coef[-1,4] 
 hist(pvals2)
 source("fdr.R")
