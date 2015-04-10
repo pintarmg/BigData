@@ -77,7 +77,6 @@ summary(fit)
 ###################Improving the Model####################
 ##########################################################
 
-
 x2 <- benjer[,c("flavor_descr","size1_descr",
 	"household_income","household_size")]
 x2$flavor_descr <- relevel(x2$flavor_descr,"VAN")
@@ -101,6 +100,7 @@ x2$flavor_descr[x2$flavor_descr=="VERMONTY PYTHON"]<-"VAN"
 x2$flavor_descr[x2$flavor_descr=="WHITE RUSSIAN"]<-"VAN"
 
 x2$flavor_descr[x2$flavor_descr=="DUBLIN MUDSLIDE"]<-"VAN"
+x2$flavor_descr[x2$flavor_descr=="NEAPOLITAN DYNAMITE"]<-"VAN"
 
 x2$usecoup = factor(benjer$coupon_value>0)
 x2$couponper1 <- benjer$coupon_value/benjer$quantity
@@ -114,12 +114,11 @@ x2$microwave <- benjer$kitchen_appliances %in% c(1,4,5,7)
 x2$sfh <- benjer$type_of_residence==1
 x2$internet <- benjer$household_internet_connection==1
 x2$tvcable <- benjer$tv_items>1
-x2$household_id<-factor(benjer$household_id)
-                           
-x3$household_id<-factor(benjer$household_id)
+z<-data.frame(hhid=benjer$household_id)
 
-xy2 <- cbind(x2,y)
+z2<-transform(z,freq.hhid=ave(seq(nrow(z)),hhid,FUN=length))
 
+xy2 <- cbind(x2,z2$freq.hhid,y)
 ## fit the regression
 fit2 <- glm(y~., data=xy2) 
 summary(fit2)
