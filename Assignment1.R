@@ -157,7 +157,7 @@ source("fdr.R")
 cutoff001<-fdr_cut(pvals2,q=0.001)
 print(cutoff001)
 print(sum(pvals2<=cutoff001))
-names(pvals2)[order(pvals2)] 
+names(pvals2)[order(pvals2)[pvals2<=cutoff001]] 
 ###############Extra Question P-Value FDR#################
 ##########################################################
 
