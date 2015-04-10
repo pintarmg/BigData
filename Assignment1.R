@@ -13,7 +13,7 @@ names(benjer)
 head(benjer)
 ##can see price paid is either deal or non deal, size description is in OZ,
 ###household size is a number 1-9(+), there are multiple purchases for the
-###same houshold
+###same houshold, interested in income and regional effects
 
 #more people = more ice cream?
 boxplot(log(benjer$quantity)~benjer$household_size,xlab="Household Size",
@@ -29,9 +29,26 @@ boxplot(amntpaid~benjer$size1_descr,ylab="Amount Paid in $",xlab="Product Size")
 boxplot(logpaid~deal,ylab="Log Amount Paid",xlab="Promotion")
 
 #purchases from same household
-samehouse<-factor(benjer$household_id)
-summary(samehouse)
+par(mfrow=c(1,1))
+z<-data.frame(hhid=benjer$household_id)
+z2<-transform(z,freq.hhid=ave(seq(nrow(z)),hhid,FUN=length))
+hist(z2$freq.hhid,xlab="Frequency of Houshold ID",
+     ylab="Number of Occurrences",main="",col="grey")
 
+#income vs coupon, income vs price
+par(mfrow=c(1,2))
+plot(logpaid~benjer$household_income,xlab="Household Income",ylab="Log Amount Paid")
+boxplot(benjer$household_income~deal,ylab="Household Income",xlab="Promotion")
+
+#Regional effects
+par(mfrow=c(1,2))
+boxplot(logpaid~factor(benjer$region, levels=1:4, labels=c("East","Centeral",
+                            "South","West")),ylab="Log Amount Paid")
+boxplot(benjer$quantity~factor(benjer$region, levels=1:4, labels=c("East","Centeral",
+                            "South","West")),ylab="Quantity")
+
+factor(benjer$region, 
+       levels=1:4, labels=c("East","Central","South","West"))
 
 #################Question 2 Explain Model#################
 ##########################################################
@@ -76,6 +93,7 @@ summary(fit)
 
 ###################Improving the Model####################
 ##########################################################
+
 
 x2 <- benjer[,c("flavor_descr","size1_descr",
 	"household_income","household_size")]
@@ -124,6 +142,7 @@ xy2 <- cbind(x2,z2$freq.hhid,y)
 ## fit the regression
 fit2 <- glm(y~., data=xy2) 
 summary(fit2)
+
 #############Question 3 P-Value Association###############
 ##########################################################
 
