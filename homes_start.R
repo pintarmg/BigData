@@ -68,8 +68,6 @@ plot(VALUE ~ factor(HHGRAD),
      col=rainbow(8), data=homes,
      xlab="Educational level of householder", ylab="home value")
 
-fit <- glm(VALUE ~ ., data=homes)
-summary(fit)
 # plot relationship of house value vs EABAN
 #y <- log(1+homes$ZINC2)
 #plot(VALUE ~ factor(ZINC2), 
@@ -98,19 +96,52 @@ pricey <- glm(log(VALUE) ~ .-AMMORT-LPRICE, data=homes)
 # extract pvalues
 pvals <- summary(pricey)$coef[-1,4]
 # example: those variable insignificant at alpha=0.2
-names(pvals)[pvals>.2]
+names(pvals)[pvals>.1]
 # you'll want to replace .2 with your FDR cutoff
 # you can use the `-AMMORT' type syntax to drop variables
+pricey2<-glm(log(VALUE)~.-AMMORT-LPRICE-ECOM1-EGREEN-ELOW1-ETRANS
+                 -ODORA, data=homes)
+
+n<-nrow(homes)
+ssr1<-var(pricey$fitted)*(n-1)
+sse1<-var(pricey$resid)*(n-1)
+rsq1<-ssr1/(ssr1+sse1)
+ssr2<-var(pricey2$fitted)*(n-1)
+sse2<-var(pricey2$resid)*(n-1)
+rsq2<-ssr2/(ssr2+sse2)
+cbind(rsq1,rsq2)
 
 ## Q3: 
 # - don't forget family="binomial"!
+pctdwn <- glm(gt20dwn ~ .-AMMORT-LPRICE, data=homes, family="binomial")
+summary(pctdwn)
+#itnerpret effects for 1st time home buyers and # of bathrooms
+
 # - use +A*B in forumula to add A interacting with B
+pctdwn2 <- glm(gt20dwn ~. +BATHS*FRSTHO-AMMORT-LPRICE, data=homes, 
+	family="binomial")
+summary(pctdwn2)
 
 ## Q4
 # this is your training sample
 gt100 <- which(homes$VALUE>1e5)
+pctdwntrn <- glm(gt20dwn ~ .+BATHS*FRSTHO-AMMORT-LPRICE, data=homes[gt100,], 
+	family="binomial")
+ppctdwn <- predict(pctdwntrn,newdata=homes[-gt100,],type="response")
+
+plot(ppctdwn ~ homes$gt20dwn[-gt100],
+	xlab="", ylab=c("predicted probability of 20 % down"), 
+	col=c("navy","red"))
+
+
 # ybar and null deviance
 source("deviance.R")
-
+D <- deviance(y=homes$gt20dwn[-gt100], pred=ppctdwn, family="binomial")
 ybar <- mean(homes$gt20dwn[-gt100]==TRUE)
 D0 <- deviance(y=homes$gt20dwn[-gt100], pred=ybar, family="binomial")
+1-D/D0
+
+summary(pctdwntrn)
+D0t <- 15210
+Dt <- 13620
+1-Dt/D0t
