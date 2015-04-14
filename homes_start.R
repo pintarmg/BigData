@@ -5,12 +5,28 @@ homes <- read.csv(file.choose())
 
 names(homes)
 
+#bucketize household income
+homes$household_income[homes$ZINC2 < 10000] <- 1
+homes$household_income[homes$ZINC2 >= 10000 & homes$ZINC2 < 40000] <- 2
+homes$household_income[homes$ZINC2 >= 40000 & homes$ZINC2 < 70000] <- 3
+homes$household_income[homes$ZINC2 >= 70000 & homes$ZINC2 < 100000] <- 4
+homes$household_income[homes$ZINC2 >= 100000 & homes$ZINC2 < 130000] <- 5
+homes$household_income[homes$ZINC2 >= 130000 & homes$ZINC2 < 190000] <- 6
+homes$household_income[homes$ZINC2 >= 190000 & homes$ZINC2 < 250000] <- 7
+homes$household_income[homes$ZINC2 >= 250000] <- 8
+
+par(mfrow=c(1,1)) # 1 row, 2 columns of plots 
+# plot relationship of house value vs bucketized household income
+plot(VALUE ~ factor(household_income), 
+     col=rainbow(8), data=homes,
+     xlab="Bucketized Household Income", ylab="home value")
+
 # conditional vs marginal value
 par(mfrow=c(1,1)) # 1 row, 2 columns of plots 
 hist(homes$VALUE, col="grey", xlab="home value", main="")
 plot(VALUE ~ factor(BATHS), 
-    col=rainbow(8), data=homes[homes$BATHS<8,],
-    xlab="number of bathrooms", ylab="home value")
+     col=rainbow(8), data=homes[homes$BATHS<8,],
+     xlab="number of bathrooms", ylab="home value")
 
 # plot relationship of house value vs EABAN
 plot(VALUE ~ factor(EABAN), 
@@ -63,16 +79,16 @@ summary(fit)
 
 # create a var for downpayment being greater than 20%
 homes$gt20dwn <- 
-	factor(0.2<(homes$LPRICE-homes$AMMORT)/homes$LPRICE)
+  factor(0.2<(homes$LPRICE-homes$AMMORT)/homes$LPRICE)
 
 # some quick plots.  Do more to build your intuition!
 par(mfrow=c(1,2)) 
 plot(VALUE ~ STATE, data=homes, 
-	col=rainbow(nlevels(homes$STATE)), 
-	ylim=c(0,10^6), cex.axis=.65)
+     col=rainbow(nlevels(homes$STATE)), 
+     ylim=c(0,10^6), cex.axis=.65)
 plot(gt20dwn ~ FRSTHO, data=homes, 
-	col=c(1,3), xlab="Buyer's First Home?", 
-	ylab="Greater than 20% down")
+     col=c(1,3), xlab="Buyer's First Home?", 
+     ylab="Greater than 20% down")
 
 ## code hints 
 
@@ -98,7 +114,3 @@ source("deviance.R")
 
 ybar <- mean(homes$gt20dwn[-gt100]==TRUE)
 D0 <- deviance(y=homes$gt20dwn[-gt100], pred=ybar, family="binomial")
-
-
-
-
