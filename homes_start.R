@@ -111,6 +111,26 @@ sse2<-var(pricey2$resid)*(n-1)
 rsq2<-ssr2/(ssr2+sse2)
 cbind(rsq1,rsq2)
 
+##alternate method for regression
+# extract pvalues
+pvals <- summary(pricey)$coef[-1,4]
+source("fdr.R")
+cutoff01<-fdr_cut(pvals,q=0.1)
+print(cutoff01)
+print(sum(pvals<=cutoff01))
+names(pvals)[pvals>cutoff01]
+##remove variables from regression
+pricey2 <-glm(log(VALUE) ~ .-AMMORT-LPRICE-ECOM1-EGREEN-ELOW1-ETRANS-ODORA-PER-ZADULT, data=homes)
+summary(pricey2)
+dpricey2 <- deviance(pricey2)
+
+##compare rsquare values
+rsq1<-1-dpricey/dnull
+rsq1
+rsq2<-1-dpricey2/dnull
+rsq2
+
+
 ## Q3: 
 # - don't forget family="binomial"!
 pctdwn <- glm(gt20dwn ~ .-AMMORT-LPRICE, data=homes, family="binomial")
@@ -121,6 +141,28 @@ summary(pctdwn)
 pctdwn2 <- glm(gt20dwn ~. +BATHS*FRSTHO-AMMORT-LPRICE, data=homes, 
 	family="binomial")
 summary(pctdwn2)
+
+##mkeenan q3
+dwn <- glm(gt20dwn ~ .-AMMORT-LPRICE,data=homes,family="binomial")
+summary(dwn)
+b <- coef(dwn)
+##effect of first home buyers
+b["FRSTHOY"]
+exp(b["FRSTHOY"])
+##if buyer is a first-time homeowner, odds that buyer has put minimum 20% down are increased by 0.6907472
+
+##effect of number of bathrooms
+b["BATHS"]
+exp(b["BATHS"])
+##each additional bathroom increases odds that buyer has put minimum 20% down by 1.277033
+
+##add interaction variable for baths and first-time buyers
+dwn2 <- glm(gt20dwn ~ .-AMMORT-LPRICE+FRSTHO*BATHS,data=homes,family="binomial")
+summary(dwn2)
+c <- coef(dwn2)
+c["BATHS:FRSTHOY"]
+exp(c["BATHS:FRSTHOY"])
+##if first-time buyer, each additional bathroom increases odds of minimum 20% down by 0.8170691
 
 ## Q4
 # this is your training sample
@@ -145,3 +187,24 @@ summary(pctdwntrn)
 D0t <- 15210
 Dt <- 13620
 1-Dt/D0t
+
+##mkeenan q4
+# this is your training sample
+gt100 <- which(homes$VALUE>1e5)
+dwntrain <- glm(gt20dwn ~ . -AMMORT-LPRICE+FRSTHO*BATHS,data=homes[gt100,],family="binomial")
+summary(dwntrain)
+dtrain <- deviance(dwntrain)
+dnulltrain <- 15210
+rsqsmpl <- 1-dtrain/dnulltrain
+pdwn <- predict(dwntrain, newdata=homes[-gt100,], type="response")
+par(mfrow=c(1,1))
+plot(pdwn ~ homes$gt20dwn[-gt100],xlab="",ylab="probability of min 20% down",col=c("navy","red"))
+# ybar and null deviance
+source("deviance.R")
+D <- deviance(y=homes$gt20dwn[-gt100],pred=pdwn,family="binomial")
+ybar <- mean(homes$gt20dwn[-gt100]==TRUE)
+D0 <- deviance(y=homes$gt20dwn[-gt100], pred=ybar, family="binomial")
+##compare sample and oos rsquare
+rsqoos <- 1-D/D0
+rsqsmpl
+rsqoos
