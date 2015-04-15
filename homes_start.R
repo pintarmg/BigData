@@ -149,12 +149,12 @@ b <- coef(dwn)
 ##effect of first home buyers
 b["FRSTHOY"]
 exp(b["FRSTHOY"])
-##if buyer is a first-time homeowner, odds that buyer has put minimum 20% down are increased by 0.6907472
+##if buyer is a first-time homeowner, odds that buyer has put minimum 20% down are multiplied by 0.6907472
 
 ##effect of number of bathrooms
 b["BATHS"]
 exp(b["BATHS"])
-##each additional bathroom increases odds that buyer has put minimum 20% down by 1.277033
+##each additional bathroom multiplies odds that buyer has put minimum 20% down by 1.277033
 
 ##add interaction variable for baths and first-time buyers
 dwn2 <- glm(gt20dwn ~ .-AMMORT-LPRICE+FRSTHO*BATHS,data=homes,family="binomial")
@@ -162,7 +162,7 @@ summary(dwn2)
 c <- coef(dwn2)
 c["BATHS:FRSTHOY"]
 exp(c["BATHS:FRSTHOY"])
-##if first-time buyer, each additional bathroom increases odds of minimum 20% down by 0.8170691
+##if first-time buyer, each additional bathroom multiplies odds of minimum 20% down by 0.8170691
 
 ## Q4
 # this is your training sample
