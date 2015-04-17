@@ -87,6 +87,8 @@ plot(VALUE ~ STATE, data=homes,
 plot(gt20dwn ~ FRSTHO, data=homes, 
      col=c(1,3), xlab="Buyer's First Home?", 
      ylab="Greater than 20% down")
+     
+plot(ZINC2~STATE, data=homes,ylim=c(0,10^5.6),cex.axis=.65)
 
 ## code hints 
 
@@ -130,6 +132,9 @@ rsq1
 rsq2<-1-dpricey2/dnull
 rsq2
 
+pricey3<-glm(log(VALUE)~.+ ZINC2*STATE -AMMORT-LPRICE-ECOM1-EGREEN-ELOW1-ETRANS
+                 -ODORA, data=homes)
+summary(pricey3)
 
 ## Q3: 
 # - don't forget family="binomial"!
