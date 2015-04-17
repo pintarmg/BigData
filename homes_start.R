@@ -121,6 +121,8 @@ cutoff01<-fdr_cut(pvals,q=0.1)
 print(cutoff01)
 print(sum(pvals<=cutoff01))
 names(pvals)[pvals>cutoff01]
+dpricey <- deviance(pricey)
+dnull <-14920
 ##remove variables from regression
 pricey2 <-glm(log(VALUE) ~ .-AMMORT-LPRICE-ECOM1-EGREEN-ELOW1-ETRANS-ODORA-PER-ZADULT, data=homes)
 summary(pricey2)
