@@ -35,7 +35,15 @@ nhlneg <- Baicc[Baicc<0]
 nhlnegfx <- exp(nhlneg)
 ##look at the bottom 25
 nhlnegfx[order(nhlnegfx)[1:25]]
-
+#effects of special configurations
+Baiccconfig <- coef(nhlreg)[colnames(config),]
+Baiccconfig <- exp(Baiccconfig)
+Baiccconfig[1:7]
+#team-season effects
+Baiccteam <- coef(nhlreg)[colnames(team),]
+Baiccteam <- exp(Baiccteam)
+Baiccteam[order(Baiccteam)[1:25]]
+Baiccteam[order(-Baiccteam)[1:25]]
 
 ##Question 2
 nhlreg2 <- gamlr(x, y, 
@@ -108,3 +116,17 @@ plot(cv.nhlreg3) ##roughly the same as AICc
 
 ##Question +
 ##traditional career plus-minus
+## convert to 2013-2014 season partial plus-minus
+now <- goal$season=="20132014"
+pm <- colSums(player[now,names(Baicc)]) # traditional plus minus
+ng <- colSums(abs(player[now,names(Baicc)])) # total number of goals
+# The individual effect on probability that a
+# given goal is for vs against that player's team
+p <- 1/(1+exp(-Baicc))
+# multiply ng*p - ng*(1-p) to get expected plus-minus
+ppm <- ng*(2*p-1)
+
+# organize the data together and print top 20
+effect <- data.frame(b=round(Baicc,3),ppm=round(ppm,3),pm=pm)
+effect <- effect[order(-effect$ppm),]
+print(effect[1:20,])
