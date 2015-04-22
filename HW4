@@ -32,7 +32,7 @@ nhlposfx <- exp(nhlpos)
 nhlposfx[order(-nhlposfx)[1:25]]
 ##get negative player contributions, exponential functions, and order
 nhlneg <- Baicc[Baicc<0]
-nhlneg[order(nhlneg)[1:25]]
+nhlnegfx <- exp(nhlneg)
 ##look at the bottom 25
 nhlnegfx[order(nhlnegfx)[1:25]]
 
