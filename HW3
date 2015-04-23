@@ -164,6 +164,7 @@ for(k in 1:11){
 tbl.pm ##plus-minus leaders all goalies except for Niklas Backstrom
 tbl.ppm ## predicted plus-minus leaders all forwards, with actuals far below predicted values
 ##########################################################
+##original plus-minus calculation and application
 ##traditional career plus-minus
 ## convert to 2013-2014 season partial plus-minus
 now <- goal$season=="20132014"
