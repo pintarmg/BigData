@@ -115,6 +115,55 @@ plot(cv.nhlreg3) ##roughly the same as AICc
 
 
 ##Question +
+##get unique seasons and create tables for plus-minus and predicted plus-minus
+sn <- unique(goal$season)
+tbl.pm <- data.frame(season=sn,player=rep(NA,11),ppm=rep(NA,11),pm=rep(NA,11))
+tbl.ppm <- data.frame(season=sn,player=rep(NA,11),ppm=rep(NA,11),pm=rep(NA,11))
+
+##loop for each season to get the predicted plus-minus and plus-minus leaders
+for(k in 1:11){
+  
+  now <- goal$season==sn[k]
+  pm <- colSums(player[now,names(Baicc)]) # traditional plus minus
+  ng <- colSums(abs(player[now,names(Baicc)])) # total number of goals
+  # The individual effect on probability that a given goal is for vs against that player's team
+  p <- 1/(1+exp(-Baicc))
+  # multiply ng*p - ng*(1-p) to get expected plus-minus
+  ppm <- ng*(2*p-1)
+  ## Organize data
+  effect <- data.frame(b=round(Baicc,3),ppm=round(ppm,3),pm=pm)
+  ##sort by plus-minus
+  effect1 <- effect[order(-effect$pm),]
+  ##extract names
+  name1 <- attr(effect1,"row.names")
+  ##sort by predicted plus-minus
+  effect2 <- effect[order(-effect$ppm),]
+  ##extract names
+  name2 <- attr(effect2,"row.names")
+  ##add leaders to existing tables
+  tbl.pm$player[k] <- name1[1]
+  tbl.pm$pm[k] <- effect$pm[order(-effect$pm)[1]]
+  tbl.pm$ppm[k] <- effect$ppm[order(-effect$pm)[1]]
+  tbl.ppm$player[k] <- name2[1]
+  tbl.ppm$pm[k] <- effect$pm[order(-effect$ppm)[1]]
+  tbl.ppm$ppm[k] <- effect$ppm[order(-effect$ppm)[1]]
+  ##erase objects
+  now <- NULL
+  pm <- NULL
+  ng <- NULL
+  p <- NULL
+  ppm <- NULL
+  effect <- NULL
+  effect1 <- NULL
+  effect2 <- NULL
+  name1<- NULL
+  name2 <- NULL 
+}
+
+##view results for each season
+tbl.pm ##plus-minus leaders all goalies except for Niklas Backstrom
+tbl.ppm ## predicted plus-minus leaders all forwards, with actuals far below predicted values
+##########################################################
 ##traditional career plus-minus
 ## convert to 2013-2014 season partial plus-minus
 now <- goal$season=="20132014"
