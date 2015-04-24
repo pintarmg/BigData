@@ -124,9 +124,16 @@ tbl.ppm <- data.frame(season=sn,player=rep(NA,11),ppm=rep(NA,11),pm=rep(NA,11))
 
 ##loop for each season to get the predicted plus-minus and plus-minus leaders
 for(k in 1:11){
-  
   now <- goal$season==sn[k]
-  pm <- colSums(player[now,names(Baicc)]) # traditional plus minus
+  ##get plus-minus on a home and away basis
+  homegoal <- goal$homegoal
+  awygoal <- homegoal-1
+  homepm <- homegoal*player
+  awypm <- awygoal*player
+  hpm <- colSums(homepm[now,names(Baicc)])
+  apm <- colSums(awypm[now,names(Baicc)])
+  ##aggregate into total traditional plus-minus
+  pm <- hpm+apm
   ng <- colSums(abs(player[now,names(Baicc)])) # total number of goals
   # The individual effect on probability that a given goal is for vs against that player's team
   p <- 1/(1+exp(-Baicc))
@@ -151,6 +158,10 @@ for(k in 1:11){
   tbl.ppm$ppm[k] <- effect$ppm[order(-effect$ppm)[1]]
   ##erase objects
   now <- NULL
+  homegoal <- NULL
+  awygoal <- NULL
+  hpm <- NULL
+  apm <- NULL
   pm <- NULL
   ng <- NULL
   p <- NULL
@@ -163,8 +174,8 @@ for(k in 1:11){
 }
 
 ##view results for each season
-tbl.pm ##plus-minus leaders all goalies except for Niklas Backstrom
-tbl.ppm ## predicted plus-minus leaders all forwards, with actuals far below predicted values
+tbl.pm 
+tbl.ppm  
 ##########################################################
 ##original plus-minus calculation and application
 ##traditional career plus-minus
