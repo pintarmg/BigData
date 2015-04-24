@@ -16,8 +16,8 @@ x <- cBind(config,team,player) # cBind binds together two sparse matrices
 y <- goal$homegoal
 
 nhlreg <- gamlr(x, y, 
-	free=1:(ncol(config)+ncol(team)), ## free denotes unpenalized columns
-	family="binomial", standardize=FALSE)
+                free=1:(ncol(config)+ncol(team)), ## free denotes unpenalized columns
+                family="binomial", standardize=FALSE)
 par(mfrow=c(1,1))
 plot(nhlreg)
 ## coefficients (grab only the players)
@@ -47,8 +47,8 @@ Baiccteam[order(-Baiccteam)[1:25]]
 
 ##Question 2
 nhlreg2 <- gamlr(x, y, 
-                free=1:(ncol(config)+ncol(team)), ## free denotes unpenalized columns
-                family="binomial", standardize=TRUE)
+                 free=1:(ncol(config)+ncol(team)), ## free denotes unpenalized columns
+                 family="binomial", standardize=TRUE)
 par(mfrow=c(1,1))
 plot(nhlreg2)
 Baicc2 <- coef(nhlreg2)[colnames(player),]
@@ -102,7 +102,7 @@ legend("topright", bty="n", lwd=1,
 
 ##Question 4
 ##run regression with only player effects
-nhlreg3 <- gamlr(player, y, family="binomial", standardize=FALSE)
+nhlreg3 <- gamlr(player, y, family="binomial", standardize=FALSE, lambda.min.ratio=0.00001)
 par(mfrow=c(1,1))
 plot(nhlreg3)
 ## coefficients (grab only the players)
@@ -110,10 +110,12 @@ plot(nhlreg3)
 Baicc3 <- coef(nhlreg3)[colnames(player),]
 ##get number of non-zero coefficients
 sum(Baicc3!=0) ##all of them, makes sense if there are no other effects
-cv.nhlreg3 <- cv.gamlr(player, y, family="binomial", standardize=FALSE)
+cv.nhlreg3 <- cv.gamlr(player, y, family="binomial", standardize=FALSE, lambda.min.ratio=0.00001)
 plot(cv.nhlreg3) ##roughly the same as AICc
-
-
+cv.min.Baicc3 <- coef(cv.nhlreg3,select="min")[colnames(player),]
+cv.1se.Baicc3 <- coef(cv.nhlreg3,select="1se")[colnames(player),]
+sum(cv.min.Baicc3!=0)
+sum(cv.1se.Baicc3!=0)
 ##Question +
 ##get unique seasons and create tables for plus-minus and predicted plus-minus
 sn <- unique(goal$season)
@@ -124,7 +126,7 @@ tbl.ppm <- data.frame(season=sn,player=rep(NA,11),ppm=rep(NA,11),pm=rep(NA,11))
 for(k in 1:11){
   
   now <- goal$season==sn[k]
-  pm <- colSums(player[now,names(Baicc)]*c(-1,1)[y[now]+1]) # traditional plus minus
+  pm <- colSums(player[now,names(Baicc)]) # traditional plus minus
   ng <- colSums(abs(player[now,names(Baicc)])) # total number of goals
   # The individual effect on probability that a given goal is for vs against that player's team
   p <- 1/(1+exp(-Baicc))
@@ -168,7 +170,7 @@ tbl.ppm ## predicted plus-minus leaders all forwards, with actuals far below pre
 ##traditional career plus-minus
 ## convert to 2013-2014 season partial plus-minus
 now <- goal$season=="20132014"
-pm <- colSums(player[now,names(Baicc)]*c(-1,1)[y[now]+1]) # traditional plus minus
+pm <- colSums(player[now,names(Baicc)]) # traditional plus minus
 ng <- colSums(abs(player[now,names(Baicc)])) # total number of goals
 # The individual effect on probability that a
 # given goal is for vs against that player's team
