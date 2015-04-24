@@ -124,7 +124,7 @@ tbl.ppm <- data.frame(season=sn,player=rep(NA,11),ppm=rep(NA,11),pm=rep(NA,11))
 for(k in 1:11){
   
   now <- goal$season==sn[k]
-  pm <- colSums(player[now,names(Baicc)]) # traditional plus minus
+  pm <- colSums(player[now,names(Baicc)]*c(-1,1)[y[now]+1]) # traditional plus minus
   ng <- colSums(abs(player[now,names(Baicc)])) # total number of goals
   # The individual effect on probability that a given goal is for vs against that player's team
   p <- 1/(1+exp(-Baicc))
@@ -168,7 +168,7 @@ tbl.ppm ## predicted plus-minus leaders all forwards, with actuals far below pre
 ##traditional career plus-minus
 ## convert to 2013-2014 season partial plus-minus
 now <- goal$season=="20132014"
-pm <- colSums(player[now,names(Baicc)]) # traditional plus minus
+pm <- colSums(player[now,names(Baicc)]*c(-1,1)[y[now]+1]) # traditional plus minus
 ng <- colSums(abs(player[now,names(Baicc)])) # total number of goals
 # The individual effect on probability that a
 # given goal is for vs against that player's team
