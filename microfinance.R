@@ -53,15 +53,15 @@ zebra <- match(rownames(hh), V(hhnet)$name)
 degree <- degree(hhnet)[zebra]
 names(degree) <- rownames(hh)
 degree[is.na(degree)] <- 0 # unconnected houses, not in our graph
-
-#[Question 1]
-hh$d <- degree > 0
+hh$d <- degree > 3
 hh$d[hh$d==TRUE] <- 1
 hh$d[hh$d==FALSE] <- 0
 hh$d
+x <- hh
+x$village <- NULL
+
 ## if you run a full glm, it takes forever and is an overfit mess
-#[Question 2]
-summary(full <- glm(loan ~ d, data=hh, family="binomial"))
+summary(full <- glm(d ~ ., data=x, family="binomial"))
 # Warning messages:
 # 1: glm.fit: algorithm did not converge 
 # 2: glm.fit: fitted probabilities numerically 0 or 1 occurred 
