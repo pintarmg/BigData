@@ -60,6 +60,49 @@ hh$d
 x <- hh
 x$village <- NULL
 
+
+###Matt Olson###
+##[1] I'd transform degree to create our treatment variable d. What would 
+##you do and why?
+hist(degree)##see that the distribution is not normal looks like a 1/x
+transdeg <- 1/log(2 + degree)
+hist(transdeg)##looks closer to normal
+
+
+##[2] Build a model to predict d from x, our controls. Comment on how tight
+##the fit is and what that implies for estimation and treatment
+
+y <- hh$loan
+d <- transdeg
+controls <-data.frame(hh[,c(2:9)])
+summary(orig <- glm(y ~ d+.,data=controls, family="binomial") )$coef['d',]
+###Appears to have a tight fit and should be good estimator 
+###and effective for treatment????(read more in the notes)
+
+##[3] Use predictions from [2] as an estimator for effect of d on loan
+print(deff <- 2 + (exp(1/(orig$coef['d']))))
+####additional connections increase odds of a loan by a factor of ~2?
+
+
+##[4] Compare the results from [3] to those from a straight (naive) lasso
+##for loan on d and x. Explain why they are similar or different.
+
+####having issue here running a lasso, need to put data in sparse matrix
+head(controls)
+factor(controls$religion)
+factor(controls$roof)
+
+x <- 
+naive <- gamlr(cBind(d,x),y)
+coef(naive)["d",]
+
+
+
+##[5] Bootstrap your estimator for [3] and describe the uncertainty.
+
+##[+] Can you think of how you'd design an experiement to estimate the 
+##the treatment effect of newtork degree?
+
 ## if you run a full glm, it takes forever and is an overfit mess
 summary(full <- glm(d ~ ., data=x, family="binomial"))
 # Warning messages:
