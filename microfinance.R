@@ -68,6 +68,10 @@ hist(degree)##see that the distribution is not normal looks like a 1/x
 tdegree <- log(1+degree)
 hist(tdegree)##looks closer to normal
 
+##log degree
+logd <- log(1+degree)
+d <-as.matrix(logd)
+colnames(d) <- "d"
 
 ##[2] Build a model to predict d from x, our controls. Comment on how tight
 ##the fit is and what that implies for estimation and treatment
