@@ -53,12 +53,6 @@ zebra <- match(rownames(hh), V(hhnet)$name)
 degree <- degree(hhnet)[zebra]
 names(degree) <- rownames(hh)
 degree[is.na(degree)] <- 0 # unconnected houses, not in our graph
-hh$d <- degree > 3
-hh$d[hh$d==TRUE] <- 1
-hh$d[hh$d==FALSE] <- 0
-hh$d
-x <- hh
-x$village <- NULL
 
 
 ##[1] I'd transform degree to create our treatment variable d. What would 
