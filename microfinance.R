@@ -109,7 +109,10 @@ x <-
   naive <- gamlr(cBind(d,x),y)
 coef(naive)["d",]
 
-
+##MK-Naive Regression
+naive <- gamlr(cbind(d,x),l,family="binomial")
+plot(naive)
+coef(naive)["d",]
 
 ##[5] Bootstrap your estimator for [3] and describe the uncertainty.
 
