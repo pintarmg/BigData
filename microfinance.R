@@ -64,9 +64,6 @@ x$village <- NULL
 ###Matt Olson###
 ##[1] I'd transform degree to create our treatment variable d. What would 
 ##you do and why?
-hist(degree)##see that the distribution is not normal looks like a 1/x
-tdegree <- log(1+degree)
-hist(tdegree)##looks closer to normal
 
 ##log degree
 logd <- log(1+degree)
@@ -89,16 +86,11 @@ colnames(dhat) <- "dhat"
 ###
 plot(dhat,d,bty="n",pch=21,bg=8) 
 cor(drop(dhat),d)^2
-y <- hh$loan
-d <- transdeg
-controls <-data.frame(hh[,c(2:9)])
-summary(orig <- glm(y ~ d+.,data=controls, family="binomial") )$coef['d',]
+
 ###Appears to have a tight fit and should be good estimator 
 ###and effective for treatment????(read more in the notes)
 
 ##[3] Use predictions from [2] as an estimator for effect of d on loan
-print(deff <- 2 + (exp(1/(orig$coef['d']))))
-####additional connections increase odds of a loan by a factor of ~2?
 
 ##MK-full regression
 l <- as.matrix(hh$loan)
@@ -129,15 +121,6 @@ legend("topleft", bty="n",
 
 ##[4] Compare the results from [3] to those from a straight (naive) lasso
 ##for loan on d and x. Explain why they are similar or different.
-
-####having issue here running a lasso, need to put data in sparse matrix
-head(controls)
-factor(controls$religion)
-factor(controls$roof)
-
-x <- 
-  naive <- gamlr(cBind(d,x),y)
-coef(naive)["d",]
 
 ##MK-Naive Regression
 naive <- gamlr(cbind(d,x),l,family="binomial")
