@@ -145,7 +145,22 @@ plot(naive)
 coef(naive)["d",]
 
 ##[5] Bootstrap your estimator for [3] and describe the uncertainty.
-
+gamb <- c()
+for(b in 1:200){
+  ib <- sample(1:n, n, replace=TRUE)
+  xb <- x[ib,]
+  db <- d[ib]
+  lb <- l[ib]
+  treatb <- gamlr(xb,db,lambda.min.ratio=1e-6)
+  dhatb <- predict(treatb, xb, type="response")
+  
+  fitb <- gamlr(cBind(db,dhatb,xb),lb,free=2,lambda.min.ratio=1e-6)
+  gamb <- c(gamb,coef(fitb)["db",])
+  print(b)
+}
+summary(gamb)
+hist(gamb)
+sd(gamb)
 ##[+] Can you think of how you'd design an experiement to estimate the 
 ##the treatment effect of newtork degree?
 
