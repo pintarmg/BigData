@@ -61,7 +61,6 @@ x <- hh
 x$village <- NULL
 
 
-###Matt Olson###
 ##[1] I'd transform degree to create our treatment variable d. What would 
 ##you do and why?
 
