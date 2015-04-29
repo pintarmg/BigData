@@ -65,8 +65,8 @@ x$village <- NULL
 ##[1] I'd transform degree to create our treatment variable d. What would 
 ##you do and why?
 hist(degree)##see that the distribution is not normal looks like a 1/x
-transdeg <- 1/log(2 + degree)
-hist(transdeg)##looks closer to normal
+tdegree <- log(1+degree)
+hist(tdegree)##looks closer to normal
 
 
 ##[2] Build a model to predict d from x, our controls. Comment on how tight
@@ -106,7 +106,7 @@ factor(controls$religion)
 factor(controls$roof)
 
 x <- 
-naive <- gamlr(cBind(d,x),y)
+  naive <- gamlr(cBind(d,x),y)
 coef(naive)["d",]
 
 
