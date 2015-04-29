@@ -100,6 +100,32 @@ summary(orig <- glm(y ~ d+.,data=controls, family="binomial") )$coef['d',]
 print(deff <- 2 + (exp(1/(orig$coef['d']))))
 ####additional connections increase odds of a loan by a factor of ~2?
 
+##MK-full regression
+l <- as.matrix(hh$loan)
+row.names(l) <- attr(hh,"row.names")
+causal <- gamlr(cbind(d,dhat,x),l,free=2,family="binomial", lambda.min.ratio=1e-6)
+sum(coef(causal)!=0)
+coef(causal)["d",]
+cv.causal <- cv.gamlr(cbind(d,dhat,x),l,free=2,family="binomial", lamdba.min.ratio=1e-6)
+sum(coef(cv.causal)!=0)
+coef(cv.causal)["d",]
+
+plot(causal)
+ll <- log(causal$lambda) ## the sequence of lambdas
+n <- nrow(l)
+par(mfrow=c(1,2))
+plot(cv.causal)
+plot(ll, AIC(causal)/n, 
+     xlab="log lambda", ylab="IC/n", pch=21, bg="orange")
+abline(v=ll[which.min(AIC(causal))], col="orange", lty=3)
+abline(v=ll[which.min(BIC(causal))], col="green", lty=3)
+abline(v=ll[which.min(AICc(causal))], col="black", lty=3)
+points(ll, BIC(causal)/n, pch=21, bg="green")
+points(ll, AICc(causal)/n, pch=21, bg="black")
+legend("topleft", bty="n",
+       fill=c("black","orange","green"),legend=c("AICc","AIC","BIC"))
+
+
 
 ##[4] Compare the results from [3] to those from a straight (naive) lasso
 ##for loan on d and x. Explain why they are similar or different.
