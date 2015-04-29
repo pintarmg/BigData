@@ -71,7 +71,20 @@ hist(transdeg)##looks closer to normal
 
 ##[2] Build a model to predict d from x, our controls. Comment on how tight
 ##the fit is and what that implies for estimation and treatment
-
+##Matt Keenan
+##get variables and run treatment regression
+x1 <- hh
+x1$loan <- NULL
+source("naref.R")
+naref(x1)
+x <- sparse.model.matrix(~., data=x1)[,-1]
+treat <- gamlr(x,d,lambda.min.ratio=1e-4)
+plot(treat)
+dhat <- predict(treat, x, type="response")
+colnames(dhat) <- "dhat"
+###
+plot(dhat,d,bty="n",pch=21,bg=8) 
+cor(drop(dhat),d)^2
 y <- hh$loan
 d <- transdeg
 controls <-data.frame(hh[,c(2:9)])
