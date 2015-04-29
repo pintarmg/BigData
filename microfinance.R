@@ -2,7 +2,7 @@
 ## data from BANERJEE, CHANDRASEKHAR, DUFLO, JACKSON 2012
 
 ## data on 8622 households
-hh <- read.csv(file.choose(), row.names="hh")
+hh <- read.csv("microfi_households.csv", row.names="hh")
 hh$village <- factor(hh$village)
 
 ## We'll kick off with a bunch of network stuff.
@@ -12,7 +12,7 @@ hh$village <- factor(hh$village)
 ## this is a tool for network analysis
 ## (see http://igraph.sourceforge.net/)
 library(igraph)
-edges <- read.table(file.choose(), colClasses="character")
+edges <- read.table("microfi_edges.txt", colClasses="character")
 ## edges holds connections between the household ids
 hhnet <- graph.edgelist(as.matrix(edges))
 hhnet <- as.undirected(hhnet) # two-way connections.
@@ -67,11 +67,7 @@ x$village <- NULL
 hist(degree)##see that the distribution is not normal looks like a 1/x
 tdegree <- log(1+degree)
 hist(tdegree)##looks closer to normal
-## Keenan-Other Degree Treatment
-##log degree
-logd <- log(1+degree)
-d <-as.matrix(logd)
-colnames(d) <- "d"
+
 
 ##[2] Build a model to predict d from x, our controls. Comment on how tight
 ##the fit is and what that implies for estimation and treatment
