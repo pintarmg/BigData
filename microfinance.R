@@ -54,7 +54,6 @@ degree <- degree(hhnet)[zebra]
 names(degree) <- rownames(hh)
 degree[is.na(degree)] <- 0 # unconnected houses, not in our graph
 
-
 ##[1] I'd transform degree to create our treatment variable d. What would 
 ##you do and why?
 
@@ -62,13 +61,17 @@ degree[is.na(degree)] <- 0 # unconnected houses, not in our graph
 logd <- log(1+degree)
 d <-as.matrix(logd)
 colnames(d) <- "d"
+par(mfrow=c(1,2))
+hist(degree, main="Histogram of Degree", col="red")
+hist(logd, main="Histogram of log(1 + Degree)", col="green")
 
 ##[2] Build a model to predict d from x, our controls. Comment on how tight
 ##the fit is and what that implies for estimation and treatment
-##Matt Keenan
+
 ##get variables and run treatment regression
 x1 <- hh
 x1$loan <- NULL
+x1$d <- NULL
 source("naref.R")
 naref(x1)
 x <- sparse.model.matrix(~., data=x1)[,-1]
@@ -77,24 +80,25 @@ plot(treat)
 dhat <- predict(treat, x, type="response")
 colnames(dhat) <- "dhat"
 ###
-plot(dhat,d,bty="n",pch=21,bg=8) 
+sum(coef(treat)!=0)
+par(mfrow=c(1,1))
+plot(dhat,d,bty="n",pch=21,bg=2, xlab="d hat values", ylab="d values",
+	main="Predicting d with controls, R^2= 8.2%") 
 cor(drop(dhat),d)^2
 
-###Appears to have a tight fit and should be good estimator 
-###and effective for treatment????(read more in the notes)
 
 ##[3] Use predictions from [2] as an estimator for effect of d on loan
 
 ##MK-full regression
 l <- as.matrix(hh$loan)
 row.names(l) <- attr(hh,"row.names")
-causal <- gamlr(cbind(d,dhat,x),l,free=2,family="binomial", lambda.min.ratio=1e-6)
+causal <- gamlr(cBind(d,dhat,x),l,free=2,family="binomial", lambda.min.ratio=1e-6)
 sum(coef(causal)!=0)
-coef(causal)["d",]
-cv.causal <- cv.gamlr(cbind(d,dhat,x),l,free=2,family="binomial", lamdba.min.ratio=1e-6)
+summary(coef(causal)["d",])
+cv.causal <- cv.gamlr(cBind(d,dhat,x),l,free=2,family="binomial", lamdba.min.ratio=1e-6)
 sum(coef(cv.causal)!=0)
 coef(cv.causal)["d",]
-
+######Note, getting big difference between these two models
 plot(causal)
 ll <- log(causal$lambda) ## the sequence of lambdas
 n <- nrow(l)
