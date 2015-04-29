@@ -8,7 +8,7 @@ hh$village <- factor(hh$village)
 ## We'll kick off with a bunch of network stuff.
 ## This will be covered in more detail in lecture 6.
 ## get igraph off of CRAN if you don't have it
-install.packages("igraph")
+#install.packages("igraph")
 ## this is a tool for network analysis
 ## (see http://igraph.sourceforge.net/)
 library(igraph)
