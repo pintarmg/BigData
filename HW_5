@@ -1,0 +1,108 @@
+## actors network example
+
+library(igraph)
+
+### GRAPH
+## read in a graph in the `graphml' formal: xml for graphs.
+## it warns about pre-specified ids, but we want this here
+## (these ids match up with the castlists in movies.txt)
+actnet <- read.graph("actors.graphml",format="graphml")
+
+### TRANSACTION
+## read in the table of actor ids for movies
+## this is a bit complex, because the movie names
+## contain all sorts of special characters.
+movies <- read.table("movies.txt", sep="\t", 
+	row.names=1, as.is=TRUE, comment.char="", quote="")
+## it's a 1 column matrix.  treat it like a vector
+movies <- drop(as.matrix(movies))
+## each element is a comma-separated set of actor ids.  
+## use `strsplit' to break these out
+movies <- strsplit(movies,",")
+## and finally, match ids to names from actnet
+casts <- lapply(movies, 
+	function(m) V(actnet)$name[match(m,V(actnet)$id)])
+## check it
+casts['True Romance']
+## format as arules transaction baskets
+library(arules)
+casttrans <- as(casts, "transactions")
+
+
+## Set up STM information
+castsize <- unlist(lapply(casts, function(m) length(m)))
+## see ?rep.int: we're just repeating movie names for each cast member
+acti <- factor(rep.int(names(casts),times=castsize))
+## actors
+actj <- factor(unlist(casts), levels=V(actnet)$name)
+## format as STM (if you specify without `x', its binary 0/1)
+actmat <- sparseMatrix(i=as.numeric(acti),j=as.numeric(actj),
+		dimnames=list(movie=levels(acti),actor=levels(actj)))
+
+## count the number of appearences by actor
+nroles <- colSums(actmat)
+names(nroles) <- colnames(actmat)
+sort(nroles, decreasing = TRUE)[1:20]
+
+nroles["Bacon, Kevin"]
+
+##[1]The actors network has an edge if the two actors were in the same
+##movie. Plot the entire actors network.
+
+###Not sure if we need to use apriori here, if so is this set up right?
+
+##I just made a plot of the act net
+V(actnet)$color <- "blue"
+
+plot(actnet, vertex.label=NA, vertex.size=3, edge.curved=FALSE)
+
+##[2] Plot the neighborhoods for “Bacon, Kevin” at orders 1-3.
+##How does the size of the network change with order?
+actor <- "Bacon, Kevin"
+nei <- graph.neighborhood(actnet, 1, V(actnet)[actor])[[1]]
+V(nei)[actor]$color <- "red"
+V(nei)$label.color = "black"
+V(nei)$label.cex = 0.65
+V(nei)$frame.color = NA
+plot(nei, edge.curved=FALSE)
+
+nei2 <- graph.neighborhood(actnet, 2, V(actnet)[actor])[[1]]
+V(nei2)[actor]$color <- "red"
+V(nei2)$label.color = ""
+V(nei2)$color <- "green"
+##the following line of code does not work not sure why, works in websearch?
+##tells me V(nei) not a graph object but will pull V(nei)
+V(nei2)[V(nei)$name]$color <- "blue"
+V(nei2)$frame.color = NA
+plot(nei2, vertex.size=2, edge.curved=FALSE)
+
+nei3 <- graph.neighborhood(actnet, 3, V(actnet)[actor])[[1]]
+V(nei3)[actor]$color <- "red"
+V(nei2)[actor]$vertex.size = 5
+V(nei3)$label.color = "black"
+V(nei3)$frame.color = NA
+plot(nei2, vertex.size=3, edge.curved=FALSE)
+
+summary(nei)
+summary(nei2)
+summary(nei3)
+
+##[3] Who were the most common actors? Who were most connected?
+##Pick a pair of actors and describe the shortest path between them.
+
+abetween <- betweenness(actnet)
+adegree <- degree(actnet)
+which.max(abetween)
+
+sort(adegree, decreasing = TRUE)[1:10]
+sort(abetween, decreasing = TRUE)[1:10]
+
+abetween["Bacon, Kevin"]
+adegree["Bacon, Kevin"]
+
+##shortest path between Martin Sheen and Ron Jeremy
+MtoR <- get.shortest.paths(actnet, from="Sheen, Martin", to="Jeremy, Ron")
+V(actnet)$name[MtoR$vpath[[1]]]
+
+##[4] Find pairwise actor-cast association rules with at least 0.01%
+##support and 10% confidence. Describe what you find.
