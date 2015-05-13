@@ -106,3 +106,79 @@ V(actnet)$name[MtoR$vpath[[1]]]
 
 ##[4] Find pairwise actor-cast association rules with at least 0.01%
 ##support and 10% confidence. Describe what you find.
+
+##-----------------##
+##MKeenan##
+
+library(igraph)
+
+### GRAPH
+## read in a graph in the `graphml' formal: xml for graphs.
+## it warns about pre-specified ids, but we want this here
+## (these ids match up with the castlists in movies.txt)
+actnet <- read.graph("actors.graphml",format="graphml")
+
+
+##Q1 
+plot(actnet,  edge.arrow.width=0, edge.curved=FALSE,
+     vertex.label=NA, vertex.frame.color=0, vertex.size=4)
+##Q2
+KB1 <- graph.neighborhood(actnet, 1, V(actnet)["Bacon, Kevin"])[[1]]
+V(KB1)$color <- "red"
+V(KB1)["Bacon, Kevin"]$color <- "blue"
+KB2 <- graph.neighborhood(actnet, 2, V(actnet)["Bacon, Kevin"])[[1]]
+V(KB2)$color <- "green"
+V(KB2)[V(KB1)$name]$color <- "red"
+V(KB2)["Bacon, Kevin"]$color <- "blue"
+KB3 <- graph.neighborhood(actnet, 3, V(actnet)["Bacon, Kevin"])[[1]]
+V(KB3)$color <- "purple"
+V(KB3)[V(KB2)$name]$color <- "green"
+V(KB3)[V(KB1)$name]$color <- "red"
+V(KB3)["Bacon, Kevin"]$color <- "blue"
+
+
+plot(KB1, edge.arrow.width=0.75, vertex.label=NA, edge.curved=FALSE, vertex.size=6)
+plot(KB2, edge.arrow.width=0, vertex.label=NA, edge.curved=FALSE, vertex.size=3)
+plot(KB3, edge.arrow.width=0, vertex.label=NA, edge.curved=FALSE, vertex.size=3)
+
+KB1##97v and 811e
+KB2##2129v and 75369e
+KB3##5981v and 234920e
+
+##Q3
+actdeg <- degree(actnet)
+actdeg[order(-actdeg)][1:10]
+
+actbtwn <- betweenness(actnet)
+actbtwn[order(-actbtwn)][1:10]
+
+actdeg["Neill, Sam"]
+actdeg["Kingsley, Ben"]
+path1 <- get.shortest.paths(actnet, from="Cruz III, Tirso", to="Kingsley, Ben")
+V(actnet)$name[path1$vpath[[1]]]
+
+##Q4
+### TRANSACTION
+## read in the table of actor ids for movies
+## this is a bit complex, because the movie names
+## contain all sorts of special characters.
+movies <- read.table("movies.txt", sep="\t", 
+	row.names=1, as.is=TRUE, comment.char="", quote="")
+## it's a 1 column matrix.  treat it like a vector
+movies <- drop(as.matrix(movies))
+## each element is a comma-separated set of actor ids.  
+## use `strsplit' to break these out
+movies <- strsplit(movies,",")
+## and finally, match ids to names from actnet
+casts <- lapply(movies, 
+	function(m) V(actnet)$name[match(m,V(actnet)$id)])
+## check it
+casts['True Romance']
+## format as arules transaction baskets
+library(arules)
+casttrans <- as(casts, "transactions")
+
+castrules <- apriori(casttrans, 
+                      parameter=list(support=.0001, confidence=.1,maxlen=2))
+inspect(castrules)
+inspect(subset(castrules,subset=lift>1000))
