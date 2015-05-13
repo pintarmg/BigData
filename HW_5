@@ -182,3 +182,15 @@ castrules <- apriori(casttrans,
                       parameter=list(support=.0001, confidence=.1,maxlen=2))
 inspect(castrules)
 inspect(subset(castrules,subset=lift>1000))
+## Set up STM information
+castsize <- unlist(lapply(casts, function(m) length(m)))
+## see ?rep.int: we're just repeating movie names for each cast member
+acti <- factor(rep.int(names(casts),times=castsize))
+## actors
+actj <- factor(unlist(casts), levels=V(actnet)$name)
+## format as STM (if you specify without `x', its binary 0/1)
+actmat <- sparseMatrix(i=as.numeric(acti),j=as.numeric(actj),
+		dimnames=list(movie=levels(acti),actor=levels(actj)))
+kbacon <- as.matrix(actmat[,"Bacon, Kevin"])
+actmat2 <- actmat[, -grep("Bacon, Kevin",colnames(actmat))]
+kbreg <- gamlr(actmat2, kbacon, family="binomial")
