@@ -125,21 +125,30 @@ plot(actnet,  edge.arrow.width=0, edge.curved=FALSE,
 ##Q2
 KB1 <- graph.neighborhood(actnet, 1, V(actnet)["Bacon, Kevin"])[[1]]
 V(KB1)$color <- "red"
+V(KB1)$size <- 6
 V(KB1)["Bacon, Kevin"]$color <- "blue"
+V(KB1)["Bacon, Kevin"]$size <- 8
 KB2 <- graph.neighborhood(actnet, 2, V(actnet)["Bacon, Kevin"])[[1]]
 V(KB2)$color <- "green"
+V(KB2)$size <- 3
 V(KB2)[V(KB1)$name]$color <- "red"
+V(KB2)[V(KB1)$name]$size <- 6
 V(KB2)["Bacon, Kevin"]$color <- "blue"
+V(KB2)["Bacon, Kevin"]$size <- 15
 KB3 <- graph.neighborhood(actnet, 3, V(actnet)["Bacon, Kevin"])[[1]]
 V(KB3)$color <- "purple"
+V(KB3)$size <- 3
 V(KB3)[V(KB2)$name]$color <- "green"
 V(KB3)[V(KB1)$name]$color <- "red"
+V(KB3)[V(KB2)$name]$size <- 5
+V(KB3)[V(KB1)$name]$size <- 10
 V(KB3)["Bacon, Kevin"]$color <- "blue"
+V(KB3)["Bacon, Kevin"]$size <- 15
 
 
-plot(KB1, edge.arrow.width=0.75, vertex.label=NA, edge.curved=FALSE, vertex.size=6)
-plot(KB2, edge.arrow.width=0, vertex.label=NA, edge.curved=FALSE, vertex.size=3)
-plot(KB3, edge.arrow.width=0, vertex.label=NA, edge.curved=FALSE, vertex.size=3)
+plot(KB1, edge.arrow.width=0.75, vertex.label=NA, edge.curved=FALSE)
+plot(KB2, edge.arrow.width=0, vertex.label=NA, edge.curved=FALSE)
+plot(KB3, edge.arrow.width=0, vertex.label=NA, edge.curved=FALSE)
 
 KB1##97v and 811e
 KB2##2129v and 75369e
