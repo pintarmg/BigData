@@ -103,7 +103,25 @@ adegree["Bacon, Kevin"]
 ##shortest path between Martin Sheen and Ron Jeremy
 MtoR <- get.shortest.paths(actnet, from="Sheen, Martin", to="Jeremy, Ron")
 V(actnet)$name[MtoR$vpath[[1]]]
-
+##plot on smaller scale
+RDC <- graph.neighborhood(actnet, 1, V(actnet)["Chong, Rae Dawn"])[[1]]
+V(RDC)$label <- ""
+V(RDC)$size <- 4
+V(RDC)["Chong, Rae Dawn"]$color <- "blue"
+##V(RDC)["Chong, Rae Dawn"]$label <- "Chong, Rae Dawn"
+V(RDC)["Chong, Rae Dawn"]$size <- 6
+V(RDC)["Sheen, Martin"]$color <- "red"
+##V(RDC)["Sheen, Martin"]$label <- "Sheen, Martin"
+V(RDC)["Sheen, Martin"]$size <- 6
+V(RDC)["Jeremy, Ron"]$color <- "green"
+##V(RDC)["Jeremy, Ron"]$label <- "Jeremy, Ron"
+V(RDC)["Jeremy, Ron"]$size <- 6
+path2 <- get.shortest.paths(RDC, from="Sheen, Martin", to="Jeremy, Ron")
+E(RDC)$color <- "grey"
+E(RDC)$width <- "0.25"
+E(RDC, path=path2$vpath[[1]])$color <- "black"
+E(RDC, path=path2$vpath[[1]])$width <- 2
+plot(RDC, edge.curved=FALSE)
 ##[4] Find pairwise actor-cast association rules with at least 0.01%
 ##support and 10% confidence. Describe what you find.
 
