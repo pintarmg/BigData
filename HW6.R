@@ -67,6 +67,7 @@ for(k in 1:10){
 }
 
 ##Q3
+##check party alignment by kmeans cluster
 sum(km5$cluster==1)
 sum(km5$cluster==2)
 sum(km5$cluster==3)
@@ -87,10 +88,53 @@ for(i in 1:5){
   D[i] <- sum(ideo$tag==paste(i,"D"))
 }
 partytbl <- cBind(R,I,D)
+partytbl
+
+##generate table with ideology and topic omega information
+ideo2 <- cBind(ideo,tpc$omega)
+##subset by party
+rsub <- ideo2[ideo2$party=="R",]
+dsub <- ideo2[ideo2$party=="D",]
+isub <- ideo2[ideo2$party=="I",]
+##create empty vectors for mean
+RT <- rep(0,10)
+IT <- rep(0,10)
+DT <- rep(0,10)
+##create empty vectors for median
+RTm <- rep(0,10)
+ITm <- rep(0,10)
+DTm <- rep(0,10)
+##create empty vectors for standard deviation
+RTsd <- rep(0,10)
+ITsd <- rep(0,10)
+DTsd <- rep(0,10)
+##get omega stats by party and topic
+for(i in 1:10){
+  RT[i] <- mean(rsub[,i+9])
+  RTm[i] <- median(rsub[,i+9])
+  RTsd[i] <- sd(rsub[,i+9])
+  IT[i] <- mean(isub[,i+9])
+  ITm[i] <- median(isub[,i+9])
+  ITsd[i] <- sd(isub[,i+9])
+  DT[i] <- mean(dsub[,i+9])
+  DTm[i] <- median(dsub[,i+9])
+  DTsd[i] <- sd(dsub[,i+9])
+}
+##compare topic statistics by party
+tmean <- data.frame(R=RT, I=IT, D=DT)
+tmed <- data.frame(R=RTm, I=ITm, D=DTm)
+tsd <- data.frame(R=RTsd, I=ITsd, D=DTsd)
+
+tmean
+tmed
+tsd
+
+##turn party to binary with republicans as 1
+ideo$party <- as.numeric(ideo$party=="R")
 
 library(gamlr)
 cv.repshr <-cv.gamlr(tpc$omega,ideo$repshare,lambda.min.ratio=1E-4)
-cv.party <-cv.gamlr(tpc$omega,ideo$party,lambda.min.ratio=1E-4)
+cv.party <-cv.gamlr(tpc$omega,ideo$party, family="binomial",lambda.min.ratio=1E-4)
 
 plot(cv.repshr)
 plot(cv.party)
@@ -100,15 +144,20 @@ plot(cv.party$gamlr)
 x1 <-100*congress109Counts/rowSums(congress109Counts)
 
 cv.repshrx1 <-cv.gamlr(x1,ideo$repshare,lambda.min.ratio=1E-4)
-cv.partyx1 <-cv.gamlr(x1,ideo$party,lambda.min.ratio=1E-4)
+cv.partyx1 <-cv.gamlr(x1,ideo$party, family="binomial",lambda.min.ratio=1E-4)
 
 plot(cv.repshrx1)
 plot(cv.partyx1)
 plot(cv.repshrx1$gamlr)
 plot(cv.partyx1$gamlr)
 
+sum(coef(cv.repshr)!=0)
+sum(coef(cv.repshrx1)!=0)
+sum(coef(cv.party)!=0)
+sum(coef(cv.partyx1)!=0)
+##less complex models, neither topic model chooses the maximum amount of topics, even with only 10
 max(1-cv.repshr$cvm/cv.repshr$cvm[1])
 max(1-cv.repshrx1$cvm/cv.repshrx1$cvm[1])
 max(1-cv.party$cvm/cv.party$cvm[1])
 max(1-cv.partyx1$cvm/cv.partyx1$cvm[1])
-##topics have MUCH better OOS R2 compared to straight phrase percentages
+##topics have better OOS R2 compared to straight phrase percentages
