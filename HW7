@@ -67,3 +67,100 @@ sum(coef(splasso,select="1se")!=0)
 
 
 ##bonus
+
+
+#######Matt Olson HW 7########
+##What are the latent factors of international currency pricing?
+##And how do these factor move against US equities?
+##We’re going to investigate underlying factors in currency
+##exchange rates and regress the S&P 500 onto this information.
+##FX data is in FXmonthly.csv.
+##SP500 returns are in sp500csv.
+##Currency codes are in currency codes.txt.
+##Translate the prices to ‘returns’ via
+
+fx <- read.csv("FXmonthly.csv")
+fx <- (fx[2:120,]-fx[1:119,])/(fx[1:119,])
+
+##[1] Discuss correlation amongst dimensions of fx.
+##How does this relate to the applicability of factor modelling?
+pairs(fx, pch=19, col="blue")
+##can see that several of these are highly correlated will pick a few and 
+##create a smaller plot that is easier to see
+
+fxpairs <- data.frame(exdnus=fx$exdnus)
+fxpairs$exeuus <- fx$exeuus
+fxpairs$exszus <- fx$exszus
+fxpairs$exsdus <- fx$exsdus
+fxpairs$exukus <- fx$exukus
+pairs(fxpairs, pch=19, col="blue")
+
+print(dneu <- cor(fx$exdnus, fx$exeuus))
+print(dnsz <- cor(fx$exdnus, fx$exszus))
+print(eusz <- cor(fx$exeuus, fx$exszus))
+print(dnsd <- cor(fx$exdnus, fx$exsdus))
+print(eusd <- cor(fx$exeuus, fx$exsdus))
+print(szsd <- cor(fx$exszus, fx$exsdus))
+print(sduk <- cor(fx$exsdus, fx$exukus))
+print(dnuk <- cor(fx$exdnus, fx$exukus))
+print(euuk <- cor(fx$exeuus, fx$exukus))
+print(szuk <- cor(fx$exszus, fx$exukus))
+
+##correlation between dn and eu is almost 1 and very high for almost all of 
+##these pairs multi-collinearity is something we were told to avoid in applied
+##regression and tolerated with regularized models will embrace with 
+##principle components analysis
+
+##[2] Fit, plot, and interpret principal components.
+fx2 <- fx
+rownames(fx2) <- NULL
+pcafx <- prcomp(fx2, scale=TRUE)
+plot(pcafx, main="")
+mtext(side=1, "Exchange Rate Principle Components", line=1, font=2)
+##majority of effect captured in first principle component
+
+fxpc <- predict(pcafx) 
+z <- scale(fx2)%*%pcafx$rotation
+all(z==fxpc)
+
+plot(fxpc[,1:2],type="n")
+text(x=fxpc[,1], y=fxpc[,2], labels=rownames(fx))
+
+loadings <- pcafx$rotation[,1:2]
+hist(loadings[,1], main="", xlab="1st Principle Component Exchange-Loadings",
+     col=8, border=grey(.9))
+loadings[order(abs(loadings[,1]), decreasing=TRUE),1]
+loadings[order(abs(loadings[,2]), decreasing=TRUE),2]
+
+round(pcafx$rotation[,1:2],1)
+
+##[3] Regress SP500 returns onto currency movement factors,
+##using both ‘glm on first K’ and lasso techniques.
+##Use the results to add to your factor interpretation.
+
+sp500 <- read.csv("sp500.csv")
+
+zdffx <- as.data.frame(fxpc)
+spret <- sp500$sp500
+summary(spreg <- glm(spret ~ zdffx[,1]))
+
+library(gamlr)
+kfits <- lapply(1:20, function(K) glm(spret~., data=zdffx[,1:K,drop=FALSE]))
+aicc <- sapply(kfits, AICc) 
+which.min(aicc)
+
+bic <- sapply(kfits, BIC) 
+which.min(bic)
+
+
+
+##[4] Fit lasso to the original covariates and
+##describe how it differs from PCR here.
+
+lassoPCFx <- cv.gamlr(x=zdffx, y=spret)
+coef(lassoPCFx, s="min") 
+
+par(mfrow=c(1,2))
+plot(aicc, pch=21, bg="maroon", xlab="K", ylab="AICc")
+plot(lassoPCFx) 
+
