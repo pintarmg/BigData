@@ -30,9 +30,15 @@ summary(pcfx)
 plot(pcfx)
 ##look at weightings on top 3
 round(pcfx$rotation[,1:3],2)
-
-##Q3
 zfx <- predict(pcfx)
+zfx[order(zfx[,1])[1:5],1]
+zfx[order(-zfx[,1])[1:5],1]
+zfx[order(zfx[,1])[1:5],2]
+zfx[order(-zfx[,1])[1:5],2]
+par(mfrow=c(1,1))
+plot(zfx[,1:2], pch=21, main="")
+hist(zfx[,1])
+##Q3
 zdfx <- as.data.frame(zfx)
 spr <- sp$sp500
 library(gamlr)
@@ -40,20 +46,48 @@ library(gamlr)
 kfits <- lapply(1:23, function(K) glm(spr~., data=zdfx[,1:K,drop=FALSE]))
 aicc <- sapply(kfits, AICc) 
 which.min(aicc) 
+min(aicc)
 bic <- sapply(kfits, BIC) 
 which.min(bic)
+min(bic)
 ##only 3
-spPCR <- cv.gamlr(as.matrix(zdfx), spr, nfold=22)
+
+##equation and in-sample R^2
+kfits[[3]]
+1 - kfits[[3]]$deviance/kfits[[3]]$null.deviance
+
+
+##run 5-fold OOS experiment
+source("deviance.R")
+zdfx2 <- cBind(zdfx,spr)
+n <- nrow(zdfx2)
+nfold <- 5
+foldid <- rep(1:nfold,each=ceiling(n/nfold))[sample(1:n)]
+OOS <- rep(NA,nfold)
+for(k in 1:nfold){ 
+  train <- which(foldid!=k) # train on all but fold `k'
+  rfold <- glm(zdfx2$spr~., data=zdfx2[,1:3,drop=FALSE], subset=train)
+  predfold <- predict(rfold, newdata=zdfx2[-train,], type="response")
+  OOS[k] <- R2(y=zdfx2$spr[-train], pred=predfold)
+}
+##cv lasso
+spPCR <- cv.gamlr(as.matrix(zdfx), spr)
 coef(spPCR, select="min")
 sum(coef(spPCR,select="min")!=0)
 coef(spPCR, select="1se")
 sum(coef(spPCR,select="1se")!=0)
+segmin <- spPCR$seg.min
+seg1se <- spPCR$seg.1se
 ##chooses a few more, but definitely includes all 3 chosen above
-
+1-spPCR$cvm[segmin]/spPCR$cvm[1]
+1-spPCR$cvm[seg1se]/spPCR$cvm[1]
+mean(OOS)
+##glm with k=3 actually better OOS R^2!
 par(mfrow=c(1,2))
 plot(aicc, pch=21, bg="maroon", xlab="K", ylab="AICc")
+abline(v=3)
 plot(spPCR) 
-##aicc curve pretty disjointed, lasso looks better
+##aicc curve pretty disjointed
 
 ##Q4
 splasso <- cv.gamlr(as.matrix(fx), spr, nfolds=22)
@@ -64,7 +98,14 @@ sum(coef(splasso,select="min")!=0)
 coef(splasso, select="1se")
 sum(coef(splasso,select="1se")!=0)
 ##min chooses more than PC regression, 1se chooses a lot less
+segmin2 <- splasso$seg.min
+seg1se2 <- splasso$seg.1se
 
+1-spPCR$cvm[segmin]/spPCR$cvm[1]
+1-spPCR$cvm[seg1se]/spPCR$cvm[1]
+1-splasso$cvm[segmin2]/splasso$cvm[1]
+1-splasso$cvm[seg1se2]/splasso$cvm[1]
+##better fit than just regressing onto the raw data
 
 ##bonus
 mfx <- as.matrix(fx)
