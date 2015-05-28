@@ -67,6 +67,36 @@ sum(coef(splasso,select="1se")!=0)
 
 
 ##bonus
+mfx <- as.matrix(fx)
+par(mfrow=c(1,1))
+plot(mfx[1,], type='l', ylab='fx')
+for(i in 2:119) 
+  lines(mfx[i,], col=rainbow(119)[i])
+##not useful, but fairly psychedelic
+
+### marginal regression
+phi <- cor(mfx, spr)/apply(mfx,2,sd) 
+z <- mfx%*%phi
+fwd <- glm(spr ~ z)
+summary(fwd)
+1-0.1982/0.26463
+plot(fwd$fit, spr, pch=21, bg="lightgreen", 
+     xlab="marginal regression fit")
+
+### Partial Least Squares
+library(textir)
+##checking k=2 through 6
+summary( fxpls <- pls(x=mfx, y=spr,  K=2) )
+plot(fxpls, pch=21, bg=8)
+summary( fxpls <- pls(x=mfx, y=spr,  K=3) )
+plot(fxpls, pch=21, bg=8)
+summary( fxpls <- pls(x=mfx, y=spr,  K=4) )
+plot(fxpls, pch=21, bg=8)
+summary( fxpls <- pls(x=mfx, y=spr,  K=5) )
+plot(fxpls, pch=21, bg=8)
+summary( fxpls <- pls(x=mfx, y=spr,  K=6) )
+plot(fxpls, pch=21, bg=8)
+##corr levels off around 4, so that seems to be the most likely candidate?
 
 
 #######Matt Olson HW 7########
