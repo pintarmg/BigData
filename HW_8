@@ -1,0 +1,88 @@
+##Olson-Homework 8
+library(tree)
+library(gamlr)
+library(randomForest)
+library(maps)
+
+gtd <- read.csv("glb_terrorism_shortened_wtext.csv")
+gtd$nkill[is.na(gtd$nkill)] <- 0
+gtd$nwound[is.na(gtd$nwound)] <- 0
+gtd$propvalue[is.na(gtd$propvalue)] <- 0
+gtd$propvalue[gtd$propvalue==-99] <- 0
+gtd$damage <- (gtd$nkill*1000000 + gtd$nwound*50000 + gtd$propvalue)
+gtd$dval <- gtd$damage>0
+gtd$longitude[is.na(gtd$longitude)] <- 0
+gtd$latlong <- gtd$long!=0
+
+
+YX <- data.frame(y=log(gtd$damage[gtd$dval==TRUE]))
+YX$lat <- gtd$latitude[gtd$dval==TRUE]
+YX$long <- gtd$longitude[gtd$dval==TRUE]
+YX$atype <- gtd$attacktype1[gtd$dval==TRUE]
+YX$wtype <- gtd$weaptype1[gtd$dval==TRUE]
+YX$latlong <- YX$long!=0
+YX$country <- gtd$country_txt[gtd$dval==TRUE]
+
+YX2 <- data.frame(y=YX$y[YX$latlong==TRUE])
+YX2$long <- as.vector(YX$long[YX$latlong==TRUE])
+YX2$lat <- as.vector(YX$lat[YX$latlong==TRUE])
+YX2$atype <- YX$atype[YX$latlong==TRUE]
+YX2$wtype <- YX$wtype [YX$latlong==TRUE]
+YX2$country <- YX$country[YX$latlong==TRUE]
+
+y <- YX2[,1]
+x <- YX2[,2:5]
+
+
+
+#Build and interpret both a single tree 
+###Damage Tree###
+dmgtree <- tree(y~.,data=x, mindev=.005, minsize=1)
+plot(dmgtree, col=8, lwd=2)
+text(dmgtree)
+dmgtree
+
+cvdmg <- cv.tree(dmgtree)
+cvdmg$size[which.min(cvdmg$dev)]
+plot(cvdmg)
+
+#and a random forest.
+###Damage Random Forest###
+dmgrf <- randomForest(y ~., data=YX2, ntree=20, nodesize=25, importance=TRUE)
+
+
+#Compare the result to other techniques we've learned.
+#CART: fit, prune, + plot. Concentrate on interpretation.
+
+dmgtree2 <- tree(y~.,data=x, mindev=.0001, minsize=1)
+cvdmgtree2 <- cv.tree(dmgtree2, K=90)
+cvdmgtree2$size
+cvdmgtree2$dev
+plot(cvdmgtree2, pch=21, bg=8, type="p", cex=1.5)
+
+dmgtree2cut <- prune.tree(dmgtree2, best=6)
+plot(dmgtree2, col=8)
+text(dmgtree2)
+
+
+
+color = heat.colors(9)[9:1]
+dmgbreaks = c(3,5,7,9,11,13,15,17,19,21)
+dmgmap <- function(y){
+	return(color[cut(drop(y),dmgbreaks)])
+}
+
+map('world')
+points(YX2[,2:3], col=dmgmap(YX2$y), pch=20, cex=.5)
+mtext("Total Damage from Terrorism")
+
+map('usa')
+points(YX2[,2:3], col=dmgmap(YX2$y), pch=20, cex=.5)
+mtext("Domestic Damage from Terrorism")
+
+
+#RF: plot variable importance and predictive performance.
+varImpPlot(dmgrf,  type=1, pch=21, bg="navy", main='RF variable importance')
+
+#[+] Use Random Forests in treatment effects estimation.
+#Look back to Lecture 4. Replace lasso estimation for ^ d(x) with a
