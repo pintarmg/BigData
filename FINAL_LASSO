@@ -1,0 +1,36 @@
+library(gamlr)
+
+gtd <- read.csv("glb_terrorism_shortened_wtext.csv")
+gtd$nkill[is.na(gtd$nkill)] <- 0
+gtd$nwound[is.na(gtd$nwound)] <- 0
+gtd$propvalue[is.na(gtd$propvalue)] <- 0
+gtd$propvalue[gtd$propvalue==-99] <- 0
+gtd$damage <- (gtd$nkill + gtd$nwound*.01)
+gtd$dval <- gtd$damage>0
+gtd$longitude[is.na(gtd$longitude)] <- 0
+gtd$latlong <- gtd$long!=0
+
+
+YX <- data.frame(y=log(gtd$damage[gtd$dval==TRUE]))
+YX$lat <- gtd$latitude[gtd$dval==TRUE]
+YX$long <- gtd$longitude[gtd$dval==TRUE]
+YX$atype <- gtd$attacktype1[gtd$dval==TRUE]
+YX$wtype <- gtd$weaptype1[gtd$dval==TRUE]
+YX$latlong <- YX$long!=0
+YX$country <- gtd$country_txt[gtd$dval==TRUE]
+YX$suicide <- as.factor(gtd$suicide[gtd$dval==TRUE])
+YX$gname <- gtd$gname[gtd$dval==TRUE]
+
+YX2 <- data.frame(y=YX$y[YX$latlong==TRUE])
+YX2$long <- as.vector(YX$long[YX$latlong==TRUE])
+YX2$lat <- as.vector(YX$lat[YX$latlong==TRUE])
+YX2$atype <- YX$atype[YX$latlong==TRUE]
+YX2$wtype <- YX$wtype [YX$latlong==TRUE]
+YX2$country <- YX$country[YX$latlong==TRUE]
+YX2$suicide <- as.factor(YX$suicide[YX$latlong==TRUE])
+YX2$gname <- YX$gname[YX$latlong==TRUE]
+YX2$lat <- as.numeric(YX2$lat)
+x2 <- sparse.model.matrix(y~.,data=YX2)[,-1]
+y2 <- YX2$y
+terror2 <- gamlr(x=x2,y=y2, lambda.min.ratio=1E-6)
+plot(terror2)
