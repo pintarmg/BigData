@@ -1,6 +1,15 @@
+##Read GTD file in with proper classes, Must download Col_Class.csv
+cclass <-read.csv("Col_Class.csv",colClasses='character')
+#cclass ## Can uncomment to check the values
+#class(cclass)
+#str(cclass)
+gtdclass <-as.matrix(cclass)[1,]
+gtd <- read.csv("glb_terrorism_shortened_wtext_v7.csv",colClasses=gtdclass)
+str(gtd) #Note R will list output in scientific notation here but it is a normal value
+gtd$eventid #Sanity check
+
 library(gamlr)
 
-gtd <- read.csv("glb_terrorism_shortened_wtext.csv")
 gtd$nkill[is.na(gtd$nkill)] <- 0
 gtd$nwound[is.na(gtd$nwound)] <- 0
 gtd$propvalue[is.na(gtd$propvalue)] <- 0
