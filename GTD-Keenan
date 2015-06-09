@@ -1,0 +1,70 @@
+##Changed column classes and used revised file due to issues that may only have affected me
+cclass <-read.csv("Col_class_v2.csv",colClasses='character',fileEncoding='latin1')
+cclass ## Can uncomment to check the values
+class(cclass)
+str(cclass)
+gtdclass <-as.matrix(cclass)[1,]
+gtd <- read.csv("glb_terrorism_shortened_wtext_v8.csv",colClasses=gtdclass,fileEncoding='latin1')
+str(gtd) #Note R will list output in scientific notation here but it is a normal value
+gtd$eventid #Sanity check
+
+##TEXT STUFF##
+library(textir)
+library(tm)
+
+sumtxt <-read.csv("summary_txt.csv",colClasses=c('numeric','character'))
+
+sumtxt1 <- iconv(sumtxt$summary, to = "ASCII//TRANSLIT")
+sumtxt1 <- gsub("[^[:alnum:]]", " ", sumtxt1)
+names(sumtxt1) <- sumtxt$eventid
+docs <- Corpus(VectorSource(sumtxt1))
+names(docs) <- names(sumtxt1)
+docs <- tm_map(docs, content_transformer(tolower))
+docs <- tm_map(docs, content_transformer(removeNumbers))
+docs <- tm_map(docs, content_transformer(removePunctuation))
+## remove stopword.  be careful with this: one's stopwords are anothers keywords.
+docs <- tm_map(docs, content_transformer(removeWords), stopwords("SMART"))
+docs <- tm_map(docs, stripWhitespace)
+
+dtm <- DocumentTermMatrix(docs)
+dtm # 11 documents, > 4K terms
+## These are special sparse matrices.  
+class(dtm)
+## You can inspect them:
+##inspect(dtm[1:5,1:8])
+## find words with greater than a min count
+##findFreqTerms(dtm,100)
+## or grab words whose count correlates with given words
+dtm <- removeSparseTerms(dtm, 0.9975)
+dtm # now near 700 terms
+inspect(dtm)
+##PCA analysis
+X <- as.matrix(dtm)
+X <- X[rowSums(X)>0]
+F <- X/rowSums(X) ## divide by row (doc totals)
+classpca <- prcomp(F, scale=TRUE)
+plot(classpca) 
+##Top 10 rotations
+classpca$rotation[order(abs(classpca$rotation[,1]),decreasing=TRUE),1][1:10]
+classpca$rotation[order(abs(classpca$rotation[,2]),decreasing=TRUE),2][1:10]
+classpca$rotation[order(abs(classpca$rotation[,3]),decreasing=TRUE),3][1:10]
+classpca$rotation[order(abs(classpca$rotation[,4]),decreasing=TRUE),4][1:10]
+classpca$rotation[order(abs(classpca$rotation[,5]),decreasing=TRUE),5][1:10]
+classpca$rotation[order(abs(classpca$rotation[,6]),decreasing=TRUE),6][1:10]
+classpca$rotation[order(abs(classpca$rotation[,7]),decreasing=TRUE),7][1:10]
+classpca$rotation[order(abs(classpca$rotation[,8]),decreasing=TRUE),8][1:10]
+classpca$rotation[order(abs(classpca$rotation[,9]),decreasing=TRUE),9][1:10]
+classpca$rotation[order(abs(classpca$rotation[,10]),decreasing=TRUE),10][1:10]
+
+##topic modeling
+library(maptpx)
+library(wordcloud)
+##TAKES A LONG TIME AND CHOOSES 12
+##tpc <- topics(dtm, K=2:50) # it chooses 2 topics only!  this is simple class ;-)
+tpc <- topics(dtm,K=12)
+summary(tpc, 10)
+rownames(tpc$theta)[order(tpc$theta[,1], decreasing=TRUE)[1:10]]
+rownames(tpc$theta)[order(tpc$theta[,2], decreasing=TRUE)[1:10]]
+for(k in 1:12){
+  wordcloud(row.names(tpc$theta),freq=tpc$theta[,k], min.freq=0.0075, col="maroon") 
+}
