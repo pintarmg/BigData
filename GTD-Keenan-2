@@ -29,7 +29,7 @@ xm <- as.matrix(subset(gtdall,select = -c(Row, eventid,
 y <- gtdall$dmg
 #cas.gtdreg <- gamlr(xm, y)
 #gtdglm <- glm(y~., data=xdf)
-#xmindf <- subset(xdf, select = -c(city,weapdetail))
+xmindf <- subset(xdf, select = -c(city,weapdetail))
 str(xdf)
 xmindf <- subset(xdf, select= -c(divert,kidhijcountry,targsubtype1,weapsubtype1,
                                  weapsubtype2,weapsubtype4))
@@ -38,6 +38,8 @@ str(xmindf)
 rmPCT <- glob2rx("*_PCT")
 rmpct<-grep(rmPCT,names(xmindf))
 xpct <- subset(xmindf, select=-c(rmpct))
+source("naref.R")
+xpct <- naref(xpct)
 cas <- gtdall$cas
 ##group by timeframe and set up response variables
 xpct1 <- xpct[xpct$iyear<1990,]
