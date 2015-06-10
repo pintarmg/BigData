@@ -348,7 +348,7 @@ ot.cas3 <- cas3 > 2.25
 ot.cas.gtdreg <- gamlr(xmpct, as.matrix(ot.cas),family="binomial",lambda.min.ratio=1e-4)
 ot.cas.gtdreg1 <- gamlr(xmpct1, as.matrix(ot.cas1),family="binomial",lambda.min.ratio=1e-4)
 ot.cas.gtdreg2 <- gamlr(xmpct2, as.matrix(ot.cas2),family="binomial",lambda.min.ratio=1e-4)
-ot.cas.gtdreg3 <- gamlr(xmpct3, as.matrix(ot.cas3),family="binomial",lambda.min.ratio=1e-4)
+ot.cas.gtdreg3 <- gamlr(xmpct3, as.matrix(ot.cas3),family="binomial",lambda.min.ratio=1e-4)##had issues here, may not be worthwhile
 lbic3 <- rep(0,4)
 lbic3[1] <- log(ot.cas.gtdreg$lambda[which.min(BIC(ot.cas.gtdreg))])
 lbic3[2] <- log(ot.cas.gtdreg1$lambda[which.min(BIC(ot.cas.gtdreg1))])
@@ -386,3 +386,18 @@ plot(ot.cas.gtdreg)
 plot(ot.cas.gtdreg1)
 plot(ot.cas.gtdreg2)
 plot(ot.cas.gtdreg3)
+
+##ROC curve as a start of further analysis
+ot.cas.pred <- predict(ot.cas.gtdreg,xmpct,type="response")
+ot.cas.pred <-drop(ot.cas.pred)
+source("roc.R")
+rule <- 0.5
+roc(p=ot.cas.pred, y=ot.cas, bty="n")
+points(x= 1-mean((ot.cas.pred<.5)[ot.cas==0]), 
+       y=mean((ot.cas.pred>.5)[ot.cas==1]), 
+       cex=1.5, pch=20, col='red') 
+legend("topleft",fill=c("red"),
+       legend=c("p=1/2"),bty="n",title="cutoff")
+
+sum( (ot.cas.pred>rule)[ot.cas==1] )/sum(ot.cas==1) ## sensitivity
+sum( (ot.cas.pred<rule)[ot.cas==0] )/sum(ot.cas==0) ## specificity
