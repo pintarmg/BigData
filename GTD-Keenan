@@ -1,12 +1,14 @@
 ##Changed column classes and used revised file due to issues that may only have affected me
-cclass <-read.csv("Col_class_v2.csv",colClasses='character',fileEncoding='latin1')
-cclass ## Can uncomment to check the values
-class(cclass)
-str(cclass)
-gtdclass <-as.matrix(cclass)[1,]
-gtd <- read.csv("glb_terrorism_shortened_wtext_v8.csv",colClasses=gtdclass,fileEncoding='latin1')
-str(gtd) #Note R will list output in scientific notation here but it is a normal value
-gtd$eventid #Sanity check
+#cclass <-read.csv("Col_class_v2.csv",colClasses='character',fileEncoding='latin1')
+#cclass ## Can uncomment to check the values
+#class(cclass)
+#str(cclass)
+#gtdclass <-as.matrix(cclass)[1,]
+#gtd <- read.csv("glb_terrorism_shortened_wtext_v8.csv",colClasses=gtdclass,fileEncoding='latin1')
+#str(gtd) #Note R will list output in scientific notation here but it is a normal value
+#gtd$eventid #Sanity check
+##Load Data
+source("GTD_Data.R")
 
 ##TEXT STUFF##
 library(textir)
