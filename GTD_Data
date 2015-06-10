@@ -4,10 +4,10 @@ cclass <-read.csv("Col_class_v2.csv",colClasses='character')
 #str(cclass)
 gtdclass <-as.matrix(cclass)[1,]
 gtd <- read.csv("glb_terrorism_shortened_wtext_v8.csv",colClasses=gtdclass)
-str(gtd) #Note R will list output in scientific notation here but it is a normal value
+#str(gtd) #Note R will list output in scientific notation here but it is a normal value
 #gtd$eventid #Sanity check
 
-library(gamlr)
+#library(gamlr)
 
 head(gtd)
 
@@ -20,7 +20,7 @@ cas <- (gtdna$nkill + gtdna$nwound *.01)
 gtdall <- subset(gtdna, select = -c(nkill, nwound, propvalue))
 gtdall$dmg <- dmg
 gtdall$cas <- cas
-head(gtdall)
+#head(gtdall)
 xdf <- subset(gtdall, select = -c(Row, eventid,dmg, cas,country,region,provstate,city,specificity,
                                   corp1,target1,gname,weapdetail,dbsource))
 xm <- as.matrix(subset(gtdall,select = -c(Row, eventid,
@@ -30,16 +30,16 @@ y <- gtdall$dmg
 #gtdreg <- gamlr(xm, y)
 #gtdglm <- glm(y~., data=xdf)
 #xmindf <- subset(xdf, select = -c(city,weapdetail))
-str(xdf)
+#str(xdf)
 xmindf <- subset(xdf, select= -c(divert,kidhijcountry,targsubtype1,weapsubtype1,
                                 weapsubtype2,weapsubtype4))
-str(xmindf)
+#str(xmindf)
 gtdglm <- glm(y~., data=xmindf)
 rmPCT <- glob2rx("*_PCT")
 rmpct<-grep(rmPCT,names(xmindf))
 xpct <- subset(xmindf, select=-c(rmpct))
-str(xpct)
-gtdpct <- glm(y~., data=xpct)
+#str(xpct)
+#gtdpct <- glm(y~., data=xpct)
 xmpct <- sparse.model.matrix(~., data=xpct)
-gtdreg <- gamlr(xmpct, y)
+#gtdreg <- gamlr(xmpct, y)
 
