@@ -403,3 +403,21 @@ legend("topleft",fill=c("red"),
 
 sum( (ot.cas.pred>rule)[ot.cas==1] )/sum(ot.cas==1) ## sensitivity
 sum( (ot.cas.pred<rule)[ot.cas==0] )/sum(ot.cas==0) ## specificity
+## sample testing
+test <- sample(1:nrow(xmpct), 25000)
+ot.cas.gtdreg2 <- gamlr(xmpct[-test,], ot.cas[-test], family="binomial",lambda.min.ratio=1e-4)
+log(ot.cas.gtdreg2$lambda[which.min(AICc(ot.cas.gtdreg2))])
+ot.reg2.caicc <- coef(ot.cas.gtdreg2, select=which.min(AICc(ot.cas.gtdreg2)))
+sum(ot.reg2.caicc!=0)
+ot.cas.pred2 <- predict(ot.cas.gtdreg2,xmpct[test,],type="response")
+ot.cas.pred2 <- drop(ot.cas.pred2)
+
+roc(p=ot.cas.pred2, y=ot.cas[test], bty="n")
+points(x= 1-mean((ot.cas.pred2<.5)[ot.cas[test]==0]), 
+       y=mean((ot.cas.pred2>.5)[ot.cas[test]==1]), 
+       cex=1.5, pch=20, col='blue') 
+legend("topleft",fill=c("blue"),
+       legend=c("p=1/2"),bty="n",title="cutoff")
+
+sum( (ot.cas.pred2>rule)[ot.cas[test]==1] )/sum(ot.cas[test]==1) ## sensitivity
+sum( (ot.cas.pred2<rule)[ot.cas[test]==0] )/sum(ot.cas[test]==0) ## specificity
