@@ -43,6 +43,3 @@ gtdpct <- glm(y~., data=xpct)
 xmpct <- sparse.model.matrix(~., data=xpct)
 gtdreg <- gamlr(xmpct, y)
 
-gtdAICc <- log(gtdreg$lambda[which.min(AICc(gtdreg))])
-gtdAIC <- log(gtdreg$lambda[which.min(AIC(gtdreg))])
-gtdBIC <- log(gtdreg$lambda[which.min(BIC(gtdreg))])
