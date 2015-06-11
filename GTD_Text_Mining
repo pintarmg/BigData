@@ -1,0 +1,257 @@
+##Changed column classes and used revised file due to issues that may only have affected me
+#cclass <-read.csv("Col_class_v2.csv",colClasses='character',fileEncoding='latin1')
+#cclass ## Can uncomment to check the values
+#class(cclass)
+#str(cclass)
+#gtdclass <-as.matrix(cclass)[1,]
+#gtd <- read.csv("glb_terrorism_shortened_wtext_v8.csv",colClasses=gtdclass,fileEncoding='latin1')
+#str(gtd) #Note R will list output in scientific notation here but it is a normal value
+#gtd$eventid #Sanity check
+##Load Data
+#source("GTD_Data.R")
+
+##TEXT STUFF##
+library(textir)
+library(tm)
+
+sumtxt <-read.csv("GTD_Text_Mining.csv",colClasses=c('factor','character'))
+sumtxt1 <- iconv(sumtxt$Notes, to = "ASCII//TRANSLIT")
+sumtxt1 <- gsub("[^[:alnum:]]", " ", sumtxt1)
+
+
+
+require(tm)
+#corp <- Corpus(DataframeSource(sumtxt))
+#names(corp) <- sumtxt[,1]
+#docs <- DocumentTermMatrix(corp)
+
+docs1 <- Corpus(VectorSource(sumtxt1))
+names(docs1) <- sumtxt[,1]
+#names(docs) <- sumtxt[,1] # no idea why this doesn't just happen
+## you can then do some cleaning here
+## tm_map just maps some function to every document in the corpus
+docs2 <- docs1
+docs <- docs1
+docs <- tm_map(docs, content_transformer(tolower)) ## make everything lowercase
+docs <- tm_map(docs, content_transformer(removeNumbers)) ## remove numbers
+docs <- tm_map(docs, content_transformer(removePunctuation)) ## remove punctuation
+## remove stopword.  be careful with this: one's stopwords are anothers keywords.
+docs <- tm_map(docs, content_transformer(removeWords), stopwords("SMART"))
+# you could also do stemming; I don't bother here.
+docs <- tm_map(docs, content_transformer(stripWhitespace)) ## remove excess white-space
+
+## create a doc-term-matrix
+dtm <- DocumentTermMatrix(docs)
+dtm # 
+## These are special sparse matrices.  
+class(dtm)
+inspect(dtm[1:5,1:8])
+## find words with greater than a min count
+findFreqTerms(dtm,100)
+findAssocs(dtm, "killed", .9) 
+
+## Finally, drop those terms that only occur in one or two lectures
+## This is a common step: you the noise of rare terms to overwhelm things,
+##  				and there is nothing to learn if a term occured once.
+## Below removes those terms that have count 0 in >75% of docs.  
+## this is way more harsh than you'd usually do (but we only have 11 docs here)
+## .75*11 is 8.25, so this will remove those with zeros in 9+ docs.
+## ie, it removes anything that doesn't occur in at least 3 docs
+dtm2 <- removeSparseTerms(dtm, 0.9999)
+dtm2 
+X2 <- as.matrix(dtm2)
+X3 <- X2
+names(X3) <- NULL
+X3 <- as.data.frame(X3)
+
+X3$Country <- sumtxt[,1]
+library(plyr)
+test <- ddply(X3,.(Country),sum)
+test <- aggregate(Country ~ ., data=X3, sum)
+Cwords <- aggregate(.~Country,data=X3,FUN="sum")
+X4 <- Cwords
+X4M <- as.matrix(X4)
+rownames(X4) <- X4[,1]
+X5 <- X4[,-1]
+XMc <- as.matrix(X5)
+XMc <- as(Matrix(XMc),"sparseMatrix")
+#xb <- as.matrix(dtm2)
+#X2 <- irlba(X)
+#XM <- as(Matrix(X2),"sparseMatrix")
+pc <- prcomp(XM, scale=TRUE)
+pctext <- prcomp(XMc, scale=TRUE)
+
+t( round(pctext$rotation[,1:5],3) )
+
+summary(pctext)
+plot(pctext)
+# look at the loadings
+loadings <- pctext$rotation[,1:5]
+loadings
+head(sort(loadings[,1],decreasing=TRUE))
+head(sort(loadings[,2],decreasing=TRUE))
+head(sort(loadings[,3],decreasing=TRUE))
+head(sort(loadings[,4],decreasing=TRUE))
+head(sort(loadings[,5],decreasing=TRUE))
+
+zpred <- predict(pctext)
+plot((zpred)[,1:2], col=0)
+text(zpred[,1:2], labels=rownames(zpred))
+plot((zpred)[,3:4], col=0)
+text(zpred[,3:4], labels=rownames(zpred))
+
+#K-means
+xscale = scale(X5)
+grp = kmeans(x=xscale, centers=10, nstart=50)
+grp
+plot(xscale[,"abortion"], xscale[,"council"],  
+     type="n", xlab="abortion", ylab="witness")
+text(xscale[,"abortion"], xscale[,"council"], labels=rownames(X5), 
+     col=rainbow(10)[grp$cluster]) ## col is all that differs from first plot
+
+
+##
+pctext$rotation[order(abs(pctext$rotation[,1]),decreasing=TRUE),1][1:10]
+pctext$rotation[order(abs(pctext$rotation[,2]),decreasing=TRUE),2][1:10]
+pctext$rotation[order(abs(pctext$rotation[,3]),decreasing=TRUE),3][1:10]
+pctext$rotation[order(abs(pctext$rotation[,4]),decreasing=TRUE),4][1:10]
+pctext$rotation[order(abs(pctext$rotation[,5]),decreasing=TRUE),5][1:10]
+pctext$rotation[order(abs(pctext$rotation[,6]),decreasing=TRUE),6][1:10]
+pctext$rotation[order(abs(pctext$rotation[,7]),decreasing=TRUE),7][1:10]
+pctext$rotation[order(abs(pctext$rotation[,8]),decreasing=TRUE),8][1:10]
+pctext$rotation[order(abs(pctext$rotation[,9]),decreasing=TRUE),9][1:10]
+pctext$rotation[order(abs(pctext$rotation[,10]),decreasing=TRUE),10][1:10]
+
+##topic modeling
+library(maptpx)
+library(wordcloud)
+##TAKES A LONG TIME AND CHOOSES 12
+##tpc <- topics(dtm, K=2:50) # it chooses 2 topics only!  this is simple class ;-)
+tpc <- topics(XMc,K=12)
+summary(tpc, 10)
+rownames(tpc$theta)[order(tpc$theta[,1], decreasing=TRUE)[1:10]]
+rownames(tpc$theta)[order(tpc$theta[,2], decreasing=TRUE)[1:10]]
+for(k in 1:12){
+  wordcloud(row.names(tpc$theta),freq=tpc$theta[,k],
+            min.freq=0.005,scale = c(4, 2),
+            max.words = 30, col=k) 
+}
+
+
+## predict is just doing the same thing as the below:
+## First, aggregate average PCs by show
+znbc <- predict(pcanbc)  
+z <- scale(survey[,-(1:2)])%*%pcanbc$rotation
+all(z==znbc)
+zpilot <- aggregate(znbc,by=list(Show=survey$Show),mean)
+rownames(zpilot) <- zpilot$Show
+zpilot <- zpilot[,-1]
+
+## look at a plot of them
+plot(zpilot[,1:2], col=0, # col=0 to get an empy plot
+     ylim=c(-.6,.65), xlim=c(-2,2), # hides "monarch cove",living with ed" but these are all tiny 
+     main="shows sized by PE") 
+text(zpilot[,1:2], labels=rownames(zpilot), 
+     col=c("navy","red","green")[shows$Genre], # color by genre
+     cex=shows$PE/mean(shows$PE)) # size by show
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+sumtxt1 <- iconv(sumtxt$summary, to = "ASCII//TRANSLIT")
+sumtxt1 <- gsub("[^[:alnum:]]", " ", sumtxt1)
+names(sumtxt1) <- sumtxt$eventid
+docs <- Corpus(VectorSource(sumtxt1))
+names(docs) <- names(sumtxt1)
+docs <- tm_map(docs, content_transformer(tolower))
+docs <- tm_map(docs, content_transformer(removeNumbers))
+docs <- tm_map(docs, content_transformer(removePunctuation))
+## remove stopword.  be careful with this: one's stopwords are anothers keywords.
+docs <- tm_map(docs, content_transformer(removeWords), stopwords("SMART"))
+docs <- tm_map(docs, stripWhitespace)
+
+dtm <- DocumentTermMatrix(docs)
+dtm # 11 documents, > 4K terms
+## These are special sparse matrices.  
+class(dtm)
+## You can inspect them:
+##inspect(dtm[1:5,1:8])
+## find words with greater than a min count
+##findFreqTerms(dtm,100)
+## or grab words whose count correlates with given words
+dtm <- removeSparseTerms(dtm, 0.9975)
+dtm # now near 700 terms
+inspect(dtm)
+##PCA analysis
+X <- as.matrix(dtm)
+X <- X[rowSums(X)>0]
+F <- X/rowSums(X) ## divide by row (doc totals)
+classpca <- prcomp(F, scale=TRUE)
+plot(classpca) 
+##Top 10 rotations
+classpca$rotation[order(abs(classpca$rotation[,1]),decreasing=TRUE),1][1:10]
+classpca$rotation[order(abs(classpca$rotation[,2]),decreasing=TRUE),2][1:10]
+classpca$rotation[order(abs(classpca$rotation[,3]),decreasing=TRUE),3][1:10]
+classpca$rotation[order(abs(classpca$rotation[,4]),decreasing=TRUE),4][1:10]
+classpca$rotation[order(abs(classpca$rotation[,5]),decreasing=TRUE),5][1:10]
+classpca$rotation[order(abs(classpca$rotation[,6]),decreasing=TRUE),6][1:10]
+classpca$rotation[order(abs(classpca$rotation[,7]),decreasing=TRUE),7][1:10]
+classpca$rotation[order(abs(classpca$rotation[,8]),decreasing=TRUE),8][1:10]
+classpca$rotation[order(abs(classpca$rotation[,9]),decreasing=TRUE),9][1:10]
+classpca$rotation[order(abs(classpca$rotation[,10]),decreasing=TRUE),10][1:10]
+
+##topic modeling
+library(maptpx)
+library(wordcloud)
+##TAKES A LONG TIME AND CHOOSES 12
+##tpc <- topics(dtm, K=2:50) # it chooses 2 topics only!  this is simple class ;-)
+tpc <- topics(dtm,K=12)
+summary(tpc, 10)
+rownames(tpc$theta)[order(tpc$theta[,1], decreasing=TRUE)[1:10]]
+rownames(tpc$theta)[order(tpc$theta[,2], decreasing=TRUE)[1:10]]
+for(k in 1:12){
+  wordcloud(row.names(tpc$theta),freq=tpc$theta[,k], min.freq=0.0075, col="maroon") 
+}
