@@ -47,8 +47,8 @@ dtm #
 class(dtm)
 inspect(dtm[1:5,1:8])
 ## find words with greater than a min count
-findFreqTerms(dtm,100)
-findAssocs(dtm, "killed", .9) 
+
+findAssocs(dtm2, "council", .1) 
 
 ## Finally, drop those terms that only occur in one or two lectures
 ## This is a common step: you the noise of rare terms to overwhelm things,
@@ -59,6 +59,7 @@ findAssocs(dtm, "killed", .9)
 ## ie, it removes anything that doesn't occur in at least 3 docs
 dtm2 <- removeSparseTerms(dtm, 0.9999)
 dtm2 
+findFreqTerms(dtm2,1000)
 X2 <- as.matrix(dtm2)
 X3 <- X2
 names(X3) <- NULL
@@ -84,30 +85,36 @@ pctext <- prcomp(XMc, scale=TRUE)
 t( round(pctext$rotation[,1:5],3) )
 
 summary(pctext)
-plot(pctext)
+plot(pctext,xlab="PC 1 - 10", main="Principal Component Screeplot")
 # look at the loadings
 loadings <- pctext$rotation[,1:5]
 loadings
-head(sort(loadings[,1],decreasing=TRUE))
+head(sort(loadings[,1],decreasing=FALSE))
 head(sort(loadings[,2],decreasing=TRUE))
 head(sort(loadings[,3],decreasing=TRUE))
 head(sort(loadings[,4],decreasing=TRUE))
 head(sort(loadings[,5],decreasing=TRUE))
 
 zpred <- predict(pctext)
-plot((zpred)[,1:2], col=0)
+plot((zpred)[,1:2], col=0, xlim=c(-400,175), ylim=c(-100,150),main="Principal Components")
 text(zpred[,1:2], labels=rownames(zpred))
 plot((zpred)[,3:4], col=0)
 text(zpred[,3:4], labels=rownames(zpred))
 
 #K-means
+par(mfrow=c(1,1))
 xscale = scale(X5)
-grp = kmeans(x=xscale, centers=10, nstart=50)
+centers =4
+grp = kmeans(x=xscale, centers=centers, nstart=50)
 grp
-plot(xscale[,"abortion"], xscale[,"council"],  
-     type="n", xlab="abortion", ylab="witness")
-text(xscale[,"abortion"], xscale[,"council"], labels=rownames(X5), 
-     col=rainbow(10)[grp$cluster]) ## col is all that differs from first plot
+par(mar=c(5,5,5,5))
+xaxis ="muslim"
+yaxis = "suicide"
+plot(xscale[,xaxis], xscale[,yaxis],  
+     type="n", xlab=xaxis, ylab=yaxis, xlim=c(-5,16), ylim=c(-5,15),main="K-Means")
+text(xscale[,xaxis], xscale[,yaxis], labels=rownames(X5), 
+     col=rainbow(4)[grp$cluster]) ## col is all that differs from first plot
+
 
 
 ##
@@ -126,17 +133,23 @@ pctext$rotation[order(abs(pctext$rotation[,10]),decreasing=TRUE),10][1:10]
 library(maptpx)
 library(wordcloud)
 ##TAKES A LONG TIME AND CHOOSES 12
-##tpc <- topics(dtm, K=2:50) # it chooses 2 topics only!  this is simple class ;-)
+tpc1 <- topics(XMc, K=2:50) # it chooses 2 topics only!  this is simple class ;-)
+tpc1
+rownames(tpc$theta)[order(tpc1$theta[,1], decreasing=TRUE)[1:10]]
+rownames(tpc$theta)[order(tpc1$theta[,2], decreasing=TRUE)[1:10]]
+rownames(tpc$theta)[order(tpc1$theta[,3], decreasing=TRUE)[1:10]]
+rownames(tpc$theta)[order(tpc1$theta[,4], decreasing=TRUE)[1:10]]
+
 tpc <- topics(XMc,K=12)
 summary(tpc, 10)
 rownames(tpc$theta)[order(tpc$theta[,1], decreasing=TRUE)[1:10]]
 rownames(tpc$theta)[order(tpc$theta[,2], decreasing=TRUE)[1:10]]
-for(k in 1:12){
-  wordcloud(row.names(tpc$theta),freq=tpc$theta[,k],
+par(mfrow=c(1,1))
+for(k in 1:4){
+  wordcloud(row.names(tpc1$theta),freq=tpc$theta[,k],
             min.freq=0.005,scale = c(4, 2),
-            max.words = 30, col=k) 
+            max.words = 30, col=k, main="Topic Model") 
 }
-
 
 ## predict is just doing the same thing as the below:
 ## First, aggregate average PCs by show
