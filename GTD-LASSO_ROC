@@ -1,0 +1,494 @@
+### Commenting out data gathering code.  Should use source("GTD_Data.R")
+######Data Code ####
+#cclass <-read.csv("Col_class_v2.csv",colClasses='character')
+#cclass ## Can uncomment to check the values
+#class(cclass)
+#str(cclass)
+#gtdclass <-as.matrix(cclass)[1,]
+#gtd <- read.csv("glb_terrorism_shortened_wtext_v8.csv",colClasses=gtdclass)
+#str(gtd) #Note R will list output in scientific notation here but it is a normal value
+#gtd$eventid #Sanity check
+#
+#library(gamlr)
+#
+#head(gtd)
+#
+#gtdna <- gtd
+#gtdna[is.na(gtdna)] <-0
+#head(gtdna)
+#
+#dmg <- (gtdna$nkill*4000000 + gtdna$nwound *40000 + gtdna$propvalue)
+#cas <- (gtdna$nkill + gtdna$nwound *.01)
+#gtdall <- subset(gtdna, select = -c(nkill, nwound, propvalue))
+#gtdall$dmg <- dmg
+gtdall$cas <- cas
+#head(gtdall)
+#xdf <- subset(gtdall, select = -c(Row, eventid,dmg, cas,country,region,provstate,city,specificity,
+#                                  corp1,target1,gname,weapdetail,dbsource))
+#xm <- as.matrix(subset(gtdall,select = -c(Row, eventid,
+#                                          dmg, cas,country,region,provstate,city,specificity,
+#                                          corp1,target1,gname,weapdetail,dbsource)))
+#y <- gtdall$dmg
+#cas.gtdreg <- gamlr(xm, y)
+#gtdglm <- glm(y~., data=xdf)
+#xmindf <- subset(xdf, select = -c(city,weapdetail))
+#str(xdf)
+#xmindf <- subset(xdf, select= -c(divert,kidhijcountry,targsubtype1,weapsubtype1,
+#                                 weapsubtype2,weapsubtype4))
+#str(xmindf)
+##gtdglm <- glm(y~., data=xmindf)
+#rmPCT <- glob2rx("*_PCT")
+#rmpct<-grep(rmPCT,names(xmindf))
+#xpct <- subset(xmindf, select=-c(rmpct))
+#####End Data Code######
+source("GTD_Data.R")
+library(gamlr)
+source("naref.R")
+xpct <- naref(xpct)
+cas <- gtdall$cas
+##group by timeframe and set up response variables
+xpct1 <- xpct[xpct$iyear<1990,]
+y1 <- y[xpct$iyear<1990]
+cas1 <- gtdall$cas[xpct$iyear<1990]
+xpct2 <- xpct[xpct$iyear>1989,]
+y2 <- y[xpct$iyear>1989]
+y2 <- y2[xpct2$iyear<2002]
+cas2 <- gtdall$cas[xpct$iyear>1989]
+cas2 <- cas2[xpct2$iyear<2002]
+xpct2 <- xpct2[xpct2$iyear<2002,]
+xpct3 <- xpct[xpct$iyear>2001,]
+y3 <- y[xpct$iyear>2001]
+cas3 <- gtdall$cas[xpct$iyear>2001]
+
+y <- log(1+y)
+y1 <- log(1+y1)
+y2 <- log(1+y2)
+y3 <- log(1+y3)
+summary(y)
+summary(y1)
+summary(y2)
+summary(y3)
+
+hist(y,xlab="Economic Damage", main=NULL)
+hist(y1,xlab="Economic Damage", main=NULL)
+hist(y2,xlab="Economic Damage", main=NULL)
+hist(y3,xlab="Economic Damage", main=NULL)
+
+cas <- log(1+cas)
+cas1 <- log(1+cas1)
+cas2 <- log(1+cas2)
+cas3 <- log(1+cas3)
+summary(cas)
+summary(cas1)
+summary(cas2)
+summary(cas3)
+
+hist(cas, xlab="Casualties", main=NULL)
+hist(cas1, xlab="Casualties", main=NULL)
+hist(cas2, xlab="Casualties", main=NULL)
+hist(cas3, xlab="Casualties", main=NULL)
+cuty <-mean(y)+1.115*sd(y)
+cutcas <- 2.25
+(2.25-mean(cas))/sd(cas)
+
+cuty
+sum(y>cuty)
+sum(cas>cutcas)
+ot.y <- y>cuty
+ot.y1 <- y1>cuty
+ot.y2 <- y2>cuty
+ot.y3 <- y3>cuty
+str(xpct)
+##gtdpct <- glm(y~., data=xpct)
+##takes a long time to , only doing this once
+##fullxmpct <- sparse.model.matrix(~.^2, data=xpct)[,-1]
+##fullxmpct1 <- sparse.model.matrix(~.^2, data=xpct1)[,-1]
+##fullxmpct2 <- sparse.model.matrix(~.^2, data=xpct2)[,-1]
+##fullxmpct3 <- sparse.model.matrix(~.^2, data=xpct3)[,-1]
+##non-interacted matrices are far quicker, probably want to see about adding some interactions
+xmpct <- sparse.model.matrix(~., data=xpct)[,-1]
+xmpct1 <- sparse.model.matrix(~., data=xpct1)[,-1]
+xmpct2 <- sparse.model.matrix(~., data=xpct2)[,-1]
+xmpct3 <- sparse.model.matrix(~., data=xpct3)[,-1]
+
+##Y AS RESPONSE VARIABLE
+##cv lassos, takes a while
+cv.gtdreg <- cv.gamlr(xmpct, as.matrix(y),lambda.min.ratio=1e-4)
+cv.gtdreg1 <- cv.gamlr(xmpct1, as.matrix(y1),lambda.min.ratio=1e-4)
+cv.gtdreg2 <- cv.gamlr(xmpct2, as.matrix(y2),lambda.min.ratio=1e-4)
+cv.gtdreg3 <- cv.gamlr(xmpct3, as.matrix(y3),lambda.min.ratio=1e-4)
+plot(cv.gtdreg)
+plot(cv.gtdreg1)
+plot(cv.gtdreg2)
+plot(cv.gtdreg3)
+min <- rep(0,4)
+min[1] <- log(cv.gtdreg$lambda.min)
+min[2] <- log(cv.gtdreg1$lambda.min)
+min[3] <- log(cv.gtdreg2$lambda.min)
+min[4] <- log(cv.gtdreg3$lambda.min)
+onese <- rep(0,4)
+onese[1] <- log(cv.gtdreg$lambda.1se)
+onese[2] <- log(cv.gtdreg1$lambda.1se)
+onese[3] <- log(cv.gtdreg2$lambda.1se)
+onese[4] <- log(cv.gtdreg3$lambda.1se)
+segmin <- rep(0,4)
+segmin[1] <- cv.gtdreg$seg.min
+segmin[2] <- cv.gtdreg1$seg.min
+segmin[3] <- cv.gtdreg2$seg.min
+segmin[4] <- cv.gtdreg3$seg.min
+seg1se <- rep(0,4)
+seg1se[1] <- cv.gtdreg$seg.1se
+seg1se[2] <- cv.gtdreg1$seg.1se
+seg1se[3] <- cv.gtdreg2$seg.1se
+seg1se[4] <- cv.gtdreg3$seg.1se
+c1se <- rep(0,4)
+c1se[1] <- sum(coef(cv.gtdreg, select="1se")!=0)
+c1se[2] <- sum(coef(cv.gtdreg1, select="1se")!=0)
+c1se[3] <- sum(coef(cv.gtdreg2, select="1se")!=0)
+c1se[4] <- sum(coef(cv.gtdreg3, select="1se")!=0)
+cmin <- rep(0,4)
+cmin[1] <- sum(coef(cv.gtdreg, select="min")!=0)
+cmin[2] <- sum(coef(cv.gtdreg1, select="min")!=0)
+cmin[3] <- sum(coef(cv.gtdreg2, select="min")!=0)
+cmin[4] <- sum(coef(cv.gtdreg3, select="min")!=0)
+oosr21se <- rep(0,4)
+oosr21se[1] <- 1-cv.gtdreg$cvm[seg1se[1]]/cv.gtdreg$cvm[1]
+oosr21se[2] <- 1-cv.gtdreg1$cvm[seg1se[2]]/cv.gtdreg1$cvm[1]
+oosr21se[3] <- 1-cv.gtdreg2$cvm[seg1se[3]]/cv.gtdreg2$cvm[1]
+oosr21se[4] <- 1-cv.gtdreg3$cvm[seg1se[4]]/cv.gtdreg3$cvm[1]
+oosr2min <- rep(0,4)
+oosr2min[1] <- 1-cv.gtdreg$cvm[segmin[1]]/cv.gtdreg$cvm[1]
+oosr2min[2] <- 1-cv.gtdreg1$cvm[segmin[2]]/cv.gtdreg1$cvm[1]
+oosr2min[3] <- 1-cv.gtdreg1$cvm[segmin[3]]/cv.gtdreg2$cvm[1]
+oosr2min[4] <- 1-cv.gtdreg1$cvm[segmin[4]]/cv.gtdreg3$cvm[1]
+cvcomp <-cbind(min,onese,cmin,c1se,oosr2min,oosr21se)
+cvcomp
+
+coefse1full <- coef(cv.gtdreg, select="1se")
+coefse1full <- drop(coefse1full)
+coefse1full[order(coefse1full, decreasing=TRUE)[1:10]]
+coefse1full[order(coefse1full)[1:10]]
+coefse1g1 <- coef(cv.gtdreg1, select="1se")
+coefse1g1 <- drop(coefse1g1)
+coefse1g1[order(coefse1g1, decreasing=TRUE)[1:10]]
+coefse1g1[order(coefse1g1)[1:10]]
+coefse1g2 <- coef(cv.gtdreg2, select="1se")
+coefse1g2 <- drop(coefse1g2)
+coefse1g2[order(coefse1g2, decreasing=TRUE)[1:10]]
+coefse1g2[order(coefse1g2)[1:10]]
+coefse1g3 <- coef(cv.gtdreg3, select="1se")
+coefse1g3 <- drop(coefse1g3)
+coefse1g3[order(coefse1g3, decreasing=TRUE)[1:10]]
+coefse1g3[order(coefse1g3)[1:10]]
+
+
+
+##normal lassos
+gtdreg <- gamlr(xmpct, as.matrix(y),lambda.min.ratio=1e-4)
+gtdreg1 <- gamlr(xmpct1, as.matrix(y1),lambda.min.ratio=1e-4)
+gtdreg2 <- gamlr(xmpct2, as.matrix(y2),lambda.min.ratio=1e-4)
+gtdreg3 <- gamlr(xmpct3, as.matrix(y3),lambda.min.ratio=1e-4)
+lbic <- rep(0,4)
+lbic[1] <- log(gtdreg$lambda[which.min(BIC(gtdreg))])
+lbic[2] <- log(gtdreg1$lambda[which.min(BIC(gtdreg1))])
+lbic[3] <- log(gtdreg2$lambda[which.min(BIC(gtdreg2))])
+lbic[4] <- log(gtdreg3$lambda[which.min(BIC(gtdreg3))])
+laicc <- rep(0,4)
+laicc[1] <- log(gtdreg$lambda[which.min(AICc(gtdreg))])
+laicc[2] <- log(gtdreg1$lambda[which.min(AICc(gtdreg1))])
+laicc[3] <- log(gtdreg2$lambda[which.min(AICc(gtdreg2))])
+laicc[4] <- log(gtdreg3$lambda[which.min(AICc(gtdreg3))])
+caicc1 <- coef(gtdreg, select=which.min(AICc(gtdreg)))
+caicc2 <- coef(gtdreg1, select=which.min(AICc(gtdreg1)))
+caicc3 <- coef(gtdreg2, select=which.min(AICc(gtdreg2)))
+caicc4 <- coef(gtdreg3, select=which.min(AICc(gtdreg3)))
+cbic1 <- coef(gtdreg, select=which.min(BIC(gtdreg)))
+cbic2 <- coef(gtdreg1, select=which.min(BIC(gtdreg1)))
+cbic3 <- coef(gtdreg2, select=which.min(BIC(gtdreg2)))
+cbic4 <- coef(gtdreg3, select=which.min(BIC(gtdreg3)))
+coefaicc <- rep(0,4)
+coefaicc[1] <- sum(caicc1!=0)
+coefaicc[2] <- sum(caicc2!=0)
+coefaicc[3] <- sum(caicc3!=0)
+coefaicc[4] <- sum(caicc4!=0)
+coefbic <- rep(0,4)
+coefbic[1] <- sum(cbic1!=0)
+coefbic[2] <- sum(cbic2!=0)
+coefbic[3] <- sum(cbic3!=0)
+coefbic[4] <- sum(cbic4!=0)
+comp1 <- cbind(lbic,laicc,coefbic,coefaicc)
+
+comp1
+
+
+plot(gtdreg)
+plot(gtdreg1)
+plot(gtdreg2)
+plot(gtdreg3)
+
+##CASUALTY AS RESPONSE VARIABLE
+##cv lassos, takes a while
+##cas.cv.gtdreg <- cv.gamlr(xmpct, as.matrix(cas),lambda.min.ratio=1e-4)
+##cas.cv.gtdreg1 <- cv.gamlr(xmpct1, as.matrix(cas1),lambda.min.ratio=1e-4)
+##cas.cv.gtdreg2 <- cv.gamlr(xmpct2, as.matrix(cas2),lambda.min.ratio=1e-4)
+##cas.cv.gtdreg3 <- cv.gamlr(xmpct3, as.matrix(cas3),lambda.min.ratio=1e-4)
+##plot(cas.cv.gtdreg)
+##plot(cas.cv.gtdreg1)
+##plot(cas.cv.gtdreg2)
+##plot(cas.cv.gtdreg3)
+##min2 <- rep(0,4)
+##min2[1] <- log(cas.cv.gtdreg$lambda.min)
+##min2[2] <- log(cas.cv.gtdreg1$lambda.min)
+##min2[3] <- log(cas.cv.gtdreg2$lambda.min)
+##min2[4] <- log(cas.cv.gtdreg3$lambda.min)
+##onese2 <- rep(0,4)
+##onese2[1] <- log(cas.cv.gtdreg$lambda.1se)
+##onese2[2] <- log(cas.cv.gtdreg1$lambda.1se)
+##onese2[3] <- log(cas.cv.gtdreg2$lambda.1se)
+##onese2[4] <- log(cas.cv.gtdreg3$lambda.1se)
+##segmin2 <- rep(0,4)
+##segmin2[1] <- cas.cv.gtdreg$seg.min
+##segmin2[2] <- cas.cv.gtdreg1$seg.min
+##segmin2[3] <- cas.cv.gtdreg2$seg.min
+##segmin2[4] <- cas.cv.gtdreg3$seg.min
+##seg1se2 <- rep(0,4)
+##seg1se2[1] <- cas.cv.gtdreg$seg.min
+##seg1se2[2] <- cas.cv.gtdreg1$seg.min
+##seg1se2[3] <- cas.cv.gtdreg2$seg.min
+##seg1se2[4] <- cas.cv.gtdreg3$seg.min
+##c1se2 <- rep(0,4)
+##c1se2[1] <- sum(coef(cas.cv.gtdreg, select="1se")!=0)
+##c1se2[2] <- sum(coef(cas.cv.gtdreg1, select="1se")!=0)
+##c1se2[3] <- sum(coef(cas.cv.gtdreg2, select="1se")!=0)
+##c1se2[4] <- sum(coef(cas.cv.gtdreg3, select="1se")!=0)
+##cmin2 <- rep(0,4)
+##cmin2[1] <- sum(coef(cas.cv.gtdreg, select="min")!=0)
+##cmin2[2] <- sum(coef(cas.cv.gtdreg1, select="min")!=0)
+##cmin2[3] <- sum(coef(cas.cv.gtdreg2, select="min")!=0)
+##cmin2[4] <- sum(coef(cas.cv.gtdreg3, select="min")!=0)
+##oosr21se2 <- rep(0,4)
+##oosr21se2[1] <- 1-cas.cv.gtdreg$cvm[seg1se[1]]/cas.cv.gtdreg$cvm[1]
+#oosr21se2[2] <- 1-cas.cv.gtdreg1$cvm[seg1se[2]]/cas.cv.gtdreg1$cvm[1]
+##oosr21se2[3] <- 1-cas.cv.gtdreg2$cvm[seg1se[3]]/cas.cv.gtdreg2$cvm[1]
+##oosr21se2[4] <- 1-cas.cv.gtdreg3$cvm[seg1se[4]]/cas.cv.gtdreg3$cvm[1]
+##oosr2min2 <- rep(0,4)
+##oosr2min2[1] <- 1-cas.cv.gtdreg$cvm[segmin[1]]/cas.cv.gtdreg$cvm[1]
+##oosr2min2[2] <- 1-cas.cv.gtdreg1$cvm[segmin[2]]/cas.cv.gtdreg1$cvm[1]
+##oosr2min2[3] <- 1-cas.cv.gtdreg1$cvm[segmin[3]]/cas.cv.gtdreg2$cvm[1]
+##oosr2min2[4] <- 1-cas.cv.gtdreg1$cvm[segmin[4]]/cas.cv.gtdreg3$cvm[1]
+##cvcomp2 <-cbind(min2,onese2,cmin2,c1se2,oosr2min2,oosr21se2)
+##cvcomp2
+
+##normal lassos
+##cas.gtdreg <- gamlr(xmpct, as.matrix(cas),lambda.min.ratio=1e-4)
+##cas.gtdreg1 <- gamlr(xmpct1, as.matrix(cas1),lambda.min.ratio=1e-4)
+##cas.gtdreg2 <- gamlr(xmpct2, as.matrix(cas2),lambda.min.ratio=1e-4)
+##cas.gtdreg3 <- gamlr(xmpct3, as.matrix(cas3),lambda.min.ratio=1e-4)
+##lbic2 <- rep(0,4)
+##lbic2[1] <- log(cas.gtdreg$lambda[which.min(BIC(cas.gtdreg))])
+##lbic2[2] <- log(cas.gtdreg1$lambda[which.min(BIC(cas.gtdreg1))])
+##lbic2[3] <- log(cas.gtdreg2$lambda[which.min(BIC(cas.gtdreg2))])
+##lbic2[4] <- log(cas.gtdreg3$lambda[which.min(BIC(cas.gtdreg3))])
+##laicc2 <- rep(0,4)
+##laicc2[1] <- log(cas.gtdreg$lambda[which.min(AICc(cas.gtdreg))])
+##laicc2[2] <- log(cas.gtdreg1$lambda[which.min(AICc(cas.gtdreg1))])
+##laicc2[3] <- log(cas.gtdreg2$lambda[which.min(AICc(cas.gtdreg2))])
+##laicc2[4] <- log(cas.gtdreg3$lambda[which.min(AICc(cas.gtdreg3))])
+##cas.caicc1 <- coef(cas.gtdreg, select=which.min(AICc(cas.gtdreg)))
+##cas.caicc2 <- coef(cas.gtdreg1, select=which.min(AICc(cas.gtdreg1)))
+##cas.caicc3 <- coef(cas.gtdreg2, select=which.min(AICc(cas.gtdreg2)))
+##cas.caicc4 <- coef(cas.gtdreg3, select=which.min(AICc(cas.gtdreg3)))
+##cas.cbic1 <- coef(cas.gtdreg, select=which.min(BIC(cas.gtdreg)))
+##cas.cbic2 <- coef(cas.gtdreg1, select=which.min(BIC(cas.gtdreg1)))
+##cas.cbic3 <- coef(cas.gtdreg2, select=which.min(BIC(cas.gtdreg2)))
+##cas.cbic4 <- coef(cas.gtdreg3, select=which.min(BIC(cas.gtdreg3)))
+##coefaicc2 <- rep(0,4)
+##coefaicc2[1] <- sum(cas.caicc1!=0)
+##coefaicc2[2] <- sum(cas.caicc2!=0)
+##coefaicc2[3] <- sum(cas.caicc3!=0)
+##coefaicc2[4] <- sum(cas.caicc4!=0)
+##coefbic2 <- rep(0,4)
+##coefbic2[1] <- sum(cas.cbic1!=0)
+##coefbic2[2] <- sum(cas.cbic2!=0)
+##coefbic2[3] <- sum(cas.cbic3!=0)
+##coefbic2[4] <- sum(cas.cbic4!=0)
+##comp2 <- cbind(lbic2,laicc2,coefbic2,coefaicc2)
+
+##comp2
+
+
+##plot(cas.gtdreg)
+##plot(cas.gtdreg1)
+##plot(cas.gtdreg2)
+##plot(cas.gtdreg3)
+
+
+##EXTREME DAMAGE EVENTS AS BINARY RESPONSE VARIABLE
+##ot.cas <- cas > 2.25
+##ot.cas1 <- cas1 > 2.25
+##ot.cas2 <- cas2 > 2.25
+##ot.cas3 <- cas3 > 2.25
+##cv lassos, takes a while, hit max CD iterations and other weirdness, commented out for now
+##ot.cas.cv.gtdreg <- cv.gamlr(xmpct, as.matrix(ot.cas), family="binomial",lambda.min.ratio=1e-4)
+##ot.cas.cv.gtdreg1 <- cv.gamlr(xmpct1, as.matrix(ot.cas1),family="binomial",lambda.min.ratio=1e-4)
+##ot.cas.cv.gtdreg2 <- cv.gamlr(xmpct2, as.matrix(ot.cas2),family="binomial",lambda.min.ratio=1e-4)
+##ot.cas.cv.gtdreg3 <- cv.gamlr(xmpct3, as.matrix(ot.cas3),family="binomial",lambda.min.ratio=1e-4)
+##plot(ot.cas.cv.gtdreg)
+##plot(ot.cas.cv.gtdreg1)
+##plot(ot.cas.cv.gtdreg2)
+##plot(ot.cas.cv.gtdreg3)
+##min3 <- rep(0,4)
+##min3[1] <- log(ot.cas.cv.gtdreg$lambda.min)
+##min3[2] <- log(ot.cas.cv.gtdreg1$lambda.min)
+##min3[3] <- log(ot.cas.cv.gtdreg2$lambda.min)
+##min3[4] <- log(ot.cas.cv.gtdreg3$lambda.min)
+##onese3 <- rep(0,4)
+##onese3[1] <- log(ot.cas.cv.gtdreg$lambda.1se)
+##onese3[2] <- log(ot.cas.cv.gtdreg1$lambda.1se)
+##onese3[3] <- log(ot.cas.cv.gtdreg2$lambda.1se)
+##onese3[4] <- log(ot.cas.cv.gtdreg3$lambda.1se)
+##segmin3 <- rep(0,4)
+##segmin3[1] <- ot.cas.cv.gtdreg$seg.min
+##segmin3[2] <- ot.cas.cv.gtdreg1$seg.min
+##segmin3[3] <- ot.cas.cv.gtdreg2$seg.min
+##segmin3[4] <- ot.cas.cv.gtdreg3$seg.min
+##seg1se3 <- rep(0,4)
+##seg1se3[1] <- ot.cas.cv.gtdreg$seg.min
+##seg1se3[2] <- ot.cas.cv.gtdreg1$seg.min
+##seg1se3[3] <- ot.cas.cv.gtdreg2$seg.min
+##seg1se3[4] <- ot.cas.cv.gtdreg3$seg.min
+##c1se3 <- rep(0,4)
+##c1se3[1] <- sum(coef(ot.cas.cv.gtdreg, select="1se")!=0)
+##c1se3[2] <- sum(coef(ot.cas.cv.gtdreg1, select="1se")!=0)
+##c1se3[3] <- sum(coef(ot.cas.cv.gtdreg2, select="1se")!=0)
+##c1se3[4] <- sum(coef(ot.cas.cv.gtdreg3, select="1se")!=0)
+##cmin3 <- rep(0,4)
+##cmin3[1] <- sum(coef(ot.cas.cv.gtdreg, select="min")!=0)
+##cmin3[2] <- sum(coef(ot.cas.cv.gtdreg1, select="min")!=0)
+##cmin3[3] <- sum(coef(ot.cas.cv.gtdreg2, select="min")!=0)
+##cmin3[4] <- sum(coef(ot.cas.cv.gtdreg3, select="min")!=0)
+##oosr21se3 <- rep(0,4)
+##oosr21se3[1] <- 1-ot.cas.cv.gtdreg$cvm[seg1se[1]]/ot.cas.cv.gtdreg$cvm[1]
+##oosr21se3[2] <- 1-ot.cas.cv.gtdreg1$cvm[seg1se[2]]/ot.cas.cv.gtdreg1$cvm[1]
+##oosr21se3[3] <- 1-ot.cas.cv.gtdreg2$cvm[seg1se[3]]/ot.cas.cv.gtdreg2$cvm[1]
+##oosr21se3[4] <- 1-ot.cas.cv.gtdreg3$cvm[seg1se[4]]/ot.cas.cv.gtdreg3$cvm[1]
+##oosr2min3 <- rep(0,4)
+##oosr2min3[1] <- 1-ot.cas.cv.gtdreg$cvm[segmin[1]]/ot.cas.cv.gtdreg$cvm[1]
+##oosr2min3[2] <- 1-ot.cas.cv.gtdreg1$cvm[segmin[2]]/ot.cas.cv.gtdreg1$cvm[1]
+##oosr2min3[3] <- 1-ot.cas.cv.gtdreg1$cvm[segmin[3]]/ot.cas.cv.gtdreg2$cvm[1]
+##oosr2min3[4] <- 1-ot.cas.cv.gtdreg1$cvm[segmin[4]]/ot.cas.cv.gtdreg3$cvm[1]
+##cvcomp3 <-cbind(min3,onese3,cmin3,c1se3,oosr2min3,oosr21se3)
+##cvcomp3
+
+##normal lassos
+ot.gtdreg <- gamlr(xmpct, as.matrix(ot.y),family="binomial", lambda.min.ratio=1e-4)
+##ot.cas.gtdreg1 <- gamlr(xmpct1, as.matrix(ot.cas1),family="binomial",lambda.min.ratio=1e-4)
+##ot.cas.gtdreg2 <- gamlr(xmpct2, as.matrix(ot.cas2),family="binomial",lambda.min.ratio=1e-4)
+##ot.cas.gtdreg3 <- gamlr(xmpct3, as.matrix(ot.cas3),family="binomial",lambda.min.ratio=1e-4)##had issues here, may not be worthwhile
+##lbic3 <- rep(0,4)
+lbic3<- log(ot.gtdreg$lambda[which.min(BIC(ot.gtdreg))])
+lbic3
+ot.cbic1 <- coef(ot.gtdreg, select=which.min(BIC(ot.gtdreg)))
+ot.cbic1 <- drop(ot.cbic1)
+sum(ot.cbic1!=0)
+laicc3 <- log(ot.gtdreg$lambda[which.min(AICc(ot.gtdreg))])
+laicc3
+ot.caicc1 <- coef(ot.gtdreg, select=which.min(AICc(ot.gtdreg)))
+ot.caicc1 <- drop(ot.caicc1)
+sum(ot.caicc1!=0)
+ot.caicc1[order(ot.caicc1, decreasing=TRUE)[1:20]]
+ot.caicc1[order(ot.caicc1)[1:20]]
+
+##lbic3[2] <- log(ot.cas.gtdreg1$lambda[which.min(BIC(ot.cas.gtdreg1))])
+##lbic3[3] <- log(ot.cas.gtdreg2$lambda[which.min(BIC(ot.cas.gtdreg2))])
+##lbic3[4] <- log(ot.cas.gtdreg3$lambda[which.min(BIC(ot.cas.gtdreg3))])
+##laicc3 <- rep(0,4)
+
+##laicc3[2] <- log(ot.cas.gtdreg1$lambda[which.min(AICc(ot.cas.gtdreg1))])
+##laicc3[3] <- log(ot.cas.gtdreg2$lambda[which.min(AICc(ot.cas.gtdreg2))])
+##laicc3[4] <- log(ot.cas.gtdreg3$lambda[which.min(AICc(ot.cas.gtdreg3))])
+ot.caicc1 <- coef(ot.gtdreg, select=which.min(AICc(ot.cas.gtdreg)))
+ot.caicc1 <- drop(ot.caicc1)
+
+##ot.cas.caicc2 <- coef(ot.cas.gtdreg1, select=which.min(AICc(ot.cas.gtdreg1)))
+##ot.cas.caicc3 <- coef(ot.cas.gtdreg2, select=which.min(AICc(ot.cas.gtdreg2)))
+##ot.cas.caicc4 <- coef(ot.cas.gtdreg3, select=which.min(AICc(ot.cas.gtdreg3)))
+##ot.cas.cbic1 <- coef(ot.cas.gtdreg, select=which.min(BIC(ot.cas.gtdreg)))
+##ot.cas.cbic2 <- coef(ot.cas.gtdreg1, select=which.min(BIC(ot.cas.gtdreg1)))
+##ot.cas.cbic3 <- coef(ot.cas.gtdreg2, select=which.min(BIC(ot.cas.gtdreg2)))
+##ot.cas.cbic4 <- coef(ot.cas.gtdreg3, select=which.min(BIC(ot.cas.gtdreg3)))
+##coefaicc3 <- rep(0,4)
+##coefaicc3[1] <- sum(ot.cas.caicc1!=0)
+##coefaicc3[2] <- sum(ot.cas.caicc2!=0)
+##coefaicc3[3] <- sum(ot.cas.caicc3!=0)
+##coefaicc3[4] <- sum(ot.cas.caicc4!=0)
+##coefbic3 <- rep(0,4)
+##coefbic3[1] <- sum(ot.cas.cbic1!=0)
+##coefbic3[2] <- sum(ot.cas.cbic2!=0)
+##coefbic3[3] <- sum(ot.cas.cbic3!=0)
+##coefbic3[4] <- sum(ot.cas.cbic4!=0)
+##comp3 <- cbind(lbic3,laicc3,coefbic3,coefaicc)
+
+##comp3
+
+
+plot(ot.gtdreg)
+##plot(ot.cas.gtdreg1)
+##plot(ot.cas.gtdreg2)
+##plot(ot.cas.gtdreg3)
+##ROC curve as a start of further analysis
+ot.pred <- predict(ot.gtdreg,xmpct,type="response")
+ot.pred <-drop(ot.pred)
+source("roc.R")
+rule <- 0.5##just a number as of right now, can be updated for analysis purposes
+roc(p=ot.pred, y=ot.y, bty="n")
+points(x= 1-mean((ot.pred<rule)[ot.y==0]), 
+       y=mean((ot.pred>rule)[ot.y==1]), 
+       cex=1.5, pch=20, col='red') 
+legend("topleft",fill=c("red"),
+       legend=c("p=1/2"),bty="n",title="cutoff")
+
+sum( (ot.pred>rule)[ot.y==1] )/sum(ot.y==1) ## sensitivity
+sum( (ot.pred<rule)[ot.y==0] )/sum(ot.y==0) ## specificity
+## sample testing
+test <- sample(1:nrow(xmpct), 30000)
+ot.gtdreg2 <- gamlr(xmpct[-test,], ot.y[-test], family="binomial",lambda.min.ratio=1e-4)
+log(ot.gtdreg2$lambda[which.min(AICc(ot.cas.gtdreg2))])
+ot.reg2.caicc <- coef(ot.gtdreg2, select=which.min(AICc(ot.gtdreg2)))
+sum(ot.reg2.caicc!=0)
+ot.pred2 <- predict(ot.gtdreg2,xmpct[test,],type="response")
+ot.pred2 <- drop(ot.pred2)
+
+roc(p=ot.pred2, y=ot.y[test], bty="n")
+points(x= 1-mean((ot.pred2<rule)[ot.y[test]==0]), 
+       y=mean((ot.pred2>rule)[ot.y[test]==1]), 
+       cex=1.5, pch=20, col='blue') 
+legend("topleft",fill=c("blue"),
+       legend=c("p=1/2"),bty="n",title="cutoff")
+
+sum( (ot.pred2>rule)[ot.y[test]==1] )/sum(ot.y[test]==1) ## sensitivity
+sum( (ot.pred2<rule)[ot.y[test]==0] )/sum(ot.y[test]==0) ## specificity
+
+
+##MAPS
+library(maps)
+color = heat.colors(24)[24:1]
+dmgbreaks = seq(0:23)
+dmgmap <- function(y){
+  return(color[cut(drop(y),dmgbreaks)])
+}
+coord1 <- data.frame(long=xpct1$longitude, lat=xpct1$latitude)
+coord2 <- data.frame(long=xpct2$longitude, lat=xpct2$latitude)
+coord3 <- data.frame(long=xpct3$longitude, lat=xpct3$latitude)
+map('world')
+points(coord1[,1:2], col=dmgmap(y1), pch=20, cex=ot.y1)
+
+map('world')
+points(coord2[,1:2], col=dmgmap(y2), pch=20, cex=ot.y2)
+
+map('world')
+points(coord3[,1:2], col=dmgmap(y3), pch=20, cex=ot.y3)
+
+map('usa')
+points(YX2[,2:3], col=dmgmap(YX2$y), pch=20, cex=.5)
+mtext("Domestic Damage from Terrorism")
